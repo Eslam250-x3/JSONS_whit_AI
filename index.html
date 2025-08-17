@@ -2626,9 +2626,16 @@ ${rawText}
                 }
 
                 const orderedTypes = [
-                    this.QuestionType.MCQ, this.QuestionType.MRQ, this.QuestionType.MATCHING, 
-                    this.QuestionType.GAP_TEXT, this.QuestionType.STRING, this.QuestionType.FRQ
-                ];
+    this.QuestionType.MCQ, 
+    this.QuestionType.MRQ, 
+    this.QuestionType.MATCHING,
+    this.QuestionType.OQ,          // <-- تمت إضافته
+    this.QuestionType.GAP_TEXT,
+    this.QuestionType.INPUT_BOX,  // <-- تمت إضافته
+    this.QuestionType.STRING, 
+    this.QuestionType.FRQ,
+    this.QuestionType.FRQ_AI      // <-- تمت إضافته
+];
 
                 for (const typeKey of orderedTypes) {
                     if (!this.questionTypeConfigs[typeKey]) continue;
