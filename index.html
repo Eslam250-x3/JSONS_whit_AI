@@ -623,8 +623,9 @@
                 // --- 5. APP BOOTSTRAP ---
                 this.loadSettings();
                 this.loadApiKeys();
-                this.loadAutoSavedContent();
+                // FIX: Initialize question type configs BEFORE loading content that depends on it.
                 this.renderQuestionTypeButtons();
+                this.loadAutoSavedContent();
                 this.populateTagsModal();
                 this.populateGenerationModal();
                 this.setActiveQuestionType(this.activeQuestionType);
