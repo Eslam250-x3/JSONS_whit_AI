@@ -1222,167 +1222,167 @@ ${rawText}
                 this._processTaggedContent(part, content);
                 return part;
             }
-            _processTaggedContent(part, content) {
-                const stripBullet = (s) => s.replace(/^\s*(?:\d+[.)]|[A-Za-z\u0621-\u064A][.)]|[-•])\s+/, '');
-                switch(part.type) {
-                    case this.QuestionType.OQ:
-                    case this.QuestionType.MCQ:
-                    case this.QuestionType.MRQ: {
-                        const lines = (content.CHOICES || '').split('\n');
-                        part.choices = [];
-                        const answers = [];
-                        lines.forEach((rawLine) => {
-                            let line = rawLine.trim();
-                            if (!line) return;
-                            const isCorrect = line.startsWith('*');
-                            if (isCorrect || line.startsWith('-')) line = line.slice(1).trim();
-                            line = stripBullet(line);
-                            const idx = part.choices.length;
-                            part.choices.push(line);
-                            if (isCorrect) answers.push(idx);
-                        });
-                        
-                        if (this.isTrueFalseQuestion(`[STEM]\n${part.stem}`)) {
-                            part.choices = this.organizeTrueFalseChoices(part.choices, answers);
-                            if (part.type !== this.QuestionType.OQ) {
-                                const trueIndex = part.choices.findIndex(choice => 
-                                    /^(صواب|true)$/i.test(choice.trim())
-                                );
-                                const falseIndex = part.choices.findIndex(choice => 
-                                    /^(خطأ|false)$/i.test(choice.trim())
-                                );
-                                
-                                if (trueIndex !== -1 && falseIndex !== -1) {
-                                    const originalTrueAnswer = answers.find(idx => 
-                                        /^(صواب|true)$/i.test(lines[idx]?.replace(/^[*-]\s*/, '').trim())
-                                    );
-                                    part.answer = part.type === this.QuestionType.MCQ ? 
-                                        (originalTrueAnswer !== undefined ? trueIndex : falseIndex) : 
-                                        [originalTrueAnswer !== undefined ? trueIndex : falseIndex];
-                                }
-                            }
-                        } else {
-                            if (part.type !== this.QuestionType.OQ) {
-                                part.answer = part.type === this.QuestionType.MCQ ? answers[0] : answers;
-                            }
-                        }
-                        break;
+           _processTaggedContent(part, content) {
+    const stripBullet = (s) => s.replace(/^\s*(?:\d+[.)]|[A-Za-z\u0621-\u064A][.)]|[-•])\s+/, '');
+    switch(part.type) {
+        case this.QuestionType.OQ:
+        case this.QuestionType.MCQ:
+        case this.QuestionType.MRQ: {
+            const lines = (content.CHOICES || '').split('\n');
+            part.choices = [];
+            const answers = [];
+            lines.forEach((rawLine) => {
+                let line = rawLine.trim();
+                if (!line) return;
+                const isCorrect = line.startsWith('*');
+                if (isCorrect || line.startsWith('-')) line = line.slice(1).trim();
+                line = stripBullet(line);
+                const idx = part.choices.length;
+                part.choices.push(line);
+                if (isCorrect) answers.push(idx);
+            });
+            
+            if (this.isTrueFalseQuestion(`[STEM]\n${part.stem}`)) {
+                part.choices = this.organizeTrueFalseChoices(part.choices, answers);
+                if (part.type !== this.QuestionType.OQ) {
+                    const trueIndex = part.choices.findIndex(choice => 
+                        /^(صواب|true|صحيح)/i.test(choice.trim()) // FIX 1a: Made regex flexible
+                    );
+                    const falseIndex = part.choices.findIndex(choice => 
+                        /^(خطأ|false|غلط)/i.test(choice.trim()) // FIX 1b: Made regex flexible
+                    );
+                    
+                    if (trueIndex !== -1 && falseIndex !== -1) {
+                        const originalTrueAnswer = answers.find(idx => 
+                            /^(صواب|true|صحيح)/i.test(lines[idx]?.replace(/^[*-]\s*/, '').trim()) // FIX 2: Made regex flexible
+                        );
+                        part.answer = part.type === this.QuestionType.MCQ ? 
+                            (originalTrueAnswer !== undefined ? trueIndex : falseIndex) : 
+                            [originalTrueAnswer !== undefined ? trueIndex : falseIndex];
                     }
-                    case this.QuestionType.MATCHING: {
-                        const pairs = (content.MATCHING_PAIRS || '').split('\n')
-                            .map(line => line.trim())
-                            .filter(Boolean)
-                            .map(line => line.split('|').map(item => item.trim()))
-                            .filter(arr => arr.length === 2 && arr[0] && arr[1]);
-                        part.pairs = pairs;
-                        part.group1 = pairs.map(p => p[0]);
-                        part.group2 = pairs.map(p => p[1]);
-                        part.answer = pairs.map((_, i) => [i, i]);
-                        break;
-                    }
-                    case this.QuestionType.GAP_TEXT: {
-                        part.answers = (content.GAPS || '').split('\n').map(v => v.trim()).filter(Boolean).map((val, i) => ({ value: val, order: i + 1 }));
-                        break;
-                    }
-                    case this.QuestionType.STRING:
-                    case this.QuestionType.FRQ:
-                    case this.QuestionType.FRQ_AI:
-                        part.answer = (content.ANSWER || '').trim();
-                        break;
-                    case this.QuestionType.INPUT_BOX: {
-                        const answerParts = (content.ANSWER || '|').split('|');
-                        part.answer = { value: (answerParts[0] || '').trim(), unit: (answerParts[1] || '').trim() };
-                        break;
-                    }
+                }
+            } else {
+                if (part.type !== this.QuestionType.OQ) {
+                    part.answer = part.type === this.QuestionType.MCQ ? answers[0] : answers;
                 }
             }
-            _parsePartSimple(text, metadata) {
-                const stripBullet = (s) => s.replace(/^\s*(?:\d+[.)]|[A-Za-z\u0621-\u064A][.)]|[-•])\s+/, '');
-                const type = (metadata.type || this.activeQuestionType).toLowerCase();
-                let part = { type: type, confidence: 0.85, metadata: metadata };
-                const lines = text.split('\n').map(l => l.trim()).filter(l => l !== '');
-                if (lines.length === 0) {
-                    part.stem = text;
-                    part.confidence = 0.1;
-                    part.choices = [];
-                    part.answer = '';
-                    part.answers = [];
-                    part.group1 = [];
-                    part.group2 = [];
-                    return part;
-                }
-                part.stem = lines[0].trim();
-                const remainingLines = lines.slice(1);
-                switch(type) {
-                    case this.QuestionType.OQ:
-                    case this.QuestionType.MCQ:
-                    case this.QuestionType.MRQ: {
-                        part.choices = [];
-                        const answers = [];
-                        remainingLines.forEach((line) => {
-                            let choiceText = line.trim();
-                            if (!choiceText) return;
-                            const isCorrect = choiceText.startsWith('*');
-                            if (isCorrect || choiceText.startsWith('-')) choiceText = choiceText.slice(1).trim();
-                            choiceText = stripBullet(choiceText);
-                            const idx = part.choices.length;
-                            part.choices.push(choiceText);
-                            if (isCorrect) answers.push(idx);
-                        });
-                        
-                        if (this.isTrueFalseQuestion(`[STEM]\n${part.stem}`)) {
-                            part.choices = this.organizeTrueFalseChoices(part.choices, answers);
-                            const trueIndex = part.choices.findIndex(choice => 
-                                /^(صواب|true|صحيح)$/i.test(choice.trim())
-                            );
-                            const falseIndex = part.choices.findIndex(choice => 
-                                /^(خطأ|false|غلط)$/i.test(choice.trim())
-                            );
-                            
-                            if (trueIndex !== -1 && falseIndex !== -1) {
-                                const originalTrueAnswer = answers.find(idx => 
-                                    /^(صواب|true|صحيح)$/i.test(remainingLines[idx]?.replace(/^[*-]\s*/, '').trim())
-                                );
-                                if (type === this.QuestionType.MCQ) {
-                                    part.answer = originalTrueAnswer !== undefined ? trueIndex : falseIndex;
-                                } else if (type === this.QuestionType.MRQ) {
-                                    part.answer = [originalTrueAnswer !== undefined ? trueIndex : falseIndex];
-                                }
-                            }
-                        } else {
-                            if (type === this.QuestionType.MCQ) part.answer = answers[0];
-                            else if (type === this.QuestionType.MRQ) part.answer = answers;
-                        }
-                        break;
-                    }
-                    case this.QuestionType.STRING:
-                    case this.QuestionType.FRQ:
-                    case this.QuestionType.FRQ_AI:
-                        part.answer = remainingLines.join('\n').trim();
-                        break;
-                    case this.QuestionType.GAP_TEXT: {
-                        part.answers = remainingLines.map((val, i) => ({ value: val, order: i + 1 }));
-                        break;
-                    }
-                    case this.QuestionType.INPUT_BOX: {
-                        const answerLine = remainingLines.join(' ').trim();
-                        const answerParts = answerLine.split('|');
-                        part.answer = { value: (answerParts[0] || '').trim(), unit: (answerParts[1] || '').trim() };
-                        break;
-                    }
-                    case this.QuestionType.MATCHING: {
-                        const pairs = remainingLines
-                            .map(line => line.split('|').map(item => item.trim()))
-                            .filter(arr => arr.length === 2 && arr[0] && arr[1]);
-                        part.pairs = pairs;
-                        part.group1 = pairs.map(p => p[0]);
-                        part.group2 = pairs.map(p => p[1]);
-                        part.answer = pairs.map((_, i) => [i, i]);
-                        break;
+            break;
+        }
+        case this.QuestionType.MATCHING: {
+            const pairs = (content.MATCHING_PAIRS || '').split('\n')
+                .map(line => line.trim())
+                .filter(Boolean)
+                .map(line => line.split('|').map(item => item.trim()))
+                .filter(arr => arr.length === 2 && arr[0] && arr[1]);
+            part.pairs = pairs;
+            part.group1 = pairs.map(p => p[0]);
+            part.group2 = pairs.map(p => p[1]);
+            part.answer = pairs.map((_, i) => [i, i]);
+            break;
+        }
+        case this.QuestionType.GAP_TEXT: {
+            part.answers = (content.GAPS || '').split('\n').map(v => v.trim()).filter(Boolean).map((val, i) => ({ value: val, order: i + 1 }));
+            break;
+        }
+        case this.QuestionType.STRING:
+        case this.QuestionType.FRQ:
+        case this.QuestionType.FRQ_AI:
+            part.answer = (content.ANSWER || '').trim();
+            break;
+        case this.QuestionType.INPUT_BOX: {
+            const answerParts = (content.ANSWER || '|').split('|');
+            part.answer = { value: (answerParts[0] || '').trim(), unit: (answerParts[1] || '').trim() };
+            break;
+        }
+    }
+}
+      _parsePartSimple(text, metadata) {
+    const stripBullet = (s) => s.replace(/^\s*(?:\d+[.)]|[A-Za-z\u0621-\u064A][.)]|[-•])\s+/, '');
+    const type = (metadata.type || this.activeQuestionType).toLowerCase();
+    let part = { type: type, confidence: 0.85, metadata: metadata };
+    const lines = text.split('\n').map(l => l.trim()).filter(l => l !== '');
+    if (lines.length === 0) {
+        part.stem = text;
+        part.confidence = 0.1;
+        part.choices = [];
+        part.answer = '';
+        part.answers = [];
+        part.group1 = [];
+        part.group2 = [];
+        return part;
+    }
+    part.stem = lines[0].trim();
+    const remainingLines = lines.slice(1);
+    switch(type) {
+        case this.QuestionType.OQ:
+        case this.QuestionType.MCQ:
+        case this.QuestionType.MRQ: {
+            part.choices = [];
+            const answers = [];
+            remainingLines.forEach((line) => {
+                let choiceText = line.trim();
+                if (!choiceText) return;
+                const isCorrect = choiceText.startsWith('*');
+                if (isCorrect || choiceText.startsWith('-')) choiceText = choiceText.slice(1).trim();
+                choiceText = stripBullet(choiceText);
+                const idx = part.choices.length;
+                part.choices.push(choiceText);
+                if (isCorrect) answers.push(idx);
+            });
+            
+            if (this.isTrueFalseQuestion(`[STEM]\n${part.stem}`)) {
+                part.choices = this.organizeTrueFalseChoices(part.choices, answers);
+                const trueIndex = part.choices.findIndex(choice => 
+                    /^(صواب|true|صحيح)/i.test(choice.trim()) // FIX 1a: Made regex flexible
+                );
+                const falseIndex = part.choices.findIndex(choice => 
+                    /^(خطأ|false|غلط)/i.test(choice.trim()) // FIX 1b: Made regex flexible
+                );
+                
+                if (trueIndex !== -1 && falseIndex !== -1) {
+                    const originalTrueAnswer = answers.find(idx => 
+                        /^(صواب|true|صحيح)/i.test(remainingLines[idx]?.replace(/^[*-]\s*/, '').trim()) // FIX 2: Made regex flexible
+                    );
+                    if (type === this.QuestionType.MCQ) {
+                        part.answer = originalTrueAnswer !== undefined ? trueIndex : falseIndex;
+                    } else if (type === this.QuestionType.MRQ) {
+                        part.answer = [originalTrueAnswer !== undefined ? trueIndex : falseIndex];
                     }
                 }
-                return part;
+            } else {
+                if (type === this.QuestionType.MCQ) part.answer = answers[0];
+                else if (type === this.QuestionType.MRQ) part.answer = answers;
             }
+            break;
+        }
+        case this.QuestionType.STRING:
+        case this.QuestionType.FRQ:
+        case this.QuestionType.FRQ_AI:
+            part.answer = remainingLines.join('\n').trim();
+            break;
+        case this.QuestionType.GAP_TEXT: {
+            part.answers = remainingLines.map((val, i) => ({ value: val, order: i + 1 }));
+            break;
+        }
+        case this.QuestionType.INPUT_BOX: {
+            const answerLine = remainingLines.join(' ').trim();
+            const answerParts = answerLine.split('|');
+            part.answer = { value: (answerParts[0] || '').trim(), unit: (answerParts[1] || '').trim() };
+            break;
+        }
+        case this.QuestionType.MATCHING: {
+            const pairs = remainingLines
+                .map(line => line.split('|').map(item => item.trim()))
+                .filter(arr => arr.length === 2 && arr[0] && arr[1]);
+            part.pairs = pairs;
+            part.group1 = pairs.map(p => p[0]);
+            part.group2 = pairs.map(p => p[1]);
+            part.answer = pairs.map((_, i) => [i, i]);
+            break;
+        }
+    }
+    return part;
+}
             async enhanceWithAI() {
                 const apiKey = this._getApiKey();
                 if (!apiKey) {
