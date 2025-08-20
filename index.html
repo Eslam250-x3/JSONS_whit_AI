@@ -583,6 +583,7 @@
                 this.isAIProcessing = false;
                 this.jsonForExport = '';
                 this.activeQuestionType = this.QuestionType.MCQ; // Default for simple text
+                this.userExplicitlySelectedType = false;
                 this.customization = { ...this.config.defaults };
                 this.apiKeys = { gemini: '', openai: '' };
                 this.aiProvider = 'gemini';
@@ -775,6 +776,7 @@
                 }
             }
             setActiveQuestionType(typeKey) {
+                    this.userExplicitlySelectedType = true; // <<< ضيف السطر ده هنا
                 this.activeQuestionType = typeKey;
                 document.querySelectorAll('.q-type-btn').forEach(btn => {
                     btn.classList.toggle('active', btn.dataset.type === typeKey);
@@ -1383,7 +1385,11 @@ ${rawText}
                 enhanceBtn.innerHTML = `<div class="spinner"></div> ${this.language === this.Language.ARABIC ? 'جاري التنسيق...' : 'Formatting...'}`;
                 enhanceBtn.disabled = true;
                 try {
-                    const prompt = this.buildAdvancedFormattingPrompt(rawText, this.activeQuestionType);
+                    let forcedType = null;
+if (this.userExplicitlySelectedType) {
+    forcedType = this.activeQuestionType;
+}
+const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                     const aiText = await this._callAI(prompt, apiKey);
                     const finalFormatted = this.postProcessAIFormatted(aiText || rawText);
                     if (finalFormatted) {
