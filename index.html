@@ -839,7 +839,7 @@
             // ***************************************************************
             // ** PARSING & AI LOGIC **
             // ***************************************************************
-            buildAdvancedFormattingPrompt(rawText) {
+            buildAdvancedFormattingPrompt(rawText, forcedType = null) {
                 const isArabic = this.language === this.Language.ARABIC;
                 
                 const examples = `
@@ -895,13 +895,20 @@ type: string
 [ANSWER]
 x=3, y=2
 `;
+                let typeInstruction = '1.  **حدد نوع** كل سؤال بناءً على محتواه.'; // دي الجملة الافتراضية
+if (forcedType && forcedType !== 'unknown') {
+    typeInstruction = `مهمتك هي تنسيق النص التالي **كنوع سؤال ${forcedType}** بشكل إلزامي. لا تحاول تخمين أو اكتشاف أي نوع آخر.`;
+}
+                
                 const basePromptAr = `
-أنت مُنسّق أسئلة خبير ومساعد أكاديمي دقيق. مهمتك هي تحويل نص غير منظم إلى تنسيق منظم وموحد.
+أنت أداة دقيقة لتحويل النصوص إلى تنسيق محدد. مهمتك الوحيدة هي تحديد أجزاء النص (السؤال، الاختيارات، الإجابة.. إلخ) ووضع الوسوم (Tags) المناسبة حولها.
+
+**مهم جدًا: لا تقم بتغيير، أو تصحيح، أو إضافة، أو حذف أي جزء من النص الأصلي إطلاقًا.** حافظ على الكلمات والمحتوى الأصلي تمامًا كما هو. وظيفتك هي فقط تطبيق هيكل التنسيق المطلوب.
 
 **التعليمات الأساسية:**
-1.  **اكتشف** كل سؤال في النص.
-2.  **حدد نوع** كل سؤال تلقائيًا من: mcq, mrq, oq, gapText, matching, string, frq, frq_ai, input_box.
-3.  **أخرج كل سؤال بالتنسيق التالي:**
+${typeInstruction}
+
+2.  **أخرج كل سؤال بالتنسيق التالي دون أي تغيير في المحتوى:**
     -   سطر بيانات وصفية في الأعلى، مثال: \`type: mcq\`
     -   وسم \`[STEM]\` لنص السؤال الرئيسي.
     -   وسوم المحتوى حسب نوع السؤال (\`[CHOICES]\`, \`[MATCHING_PAIRS]\`, \`[GAPS]\`, \`[ANSWER]\`).
@@ -916,11 +923,12 @@ x=3, y=2
 
 **قواعد الرياضيات (مهمة للغاية ويجب اتباعها بدقة):**
 -   **لا تقم أبدًا بتعديل** محتوى أو صيغة أي كود LaTeX.
--   **حوّل المحددات السطرية (inline):** أي نص محاط بـ \`$...\$\` أو \`\\(...\\)\` يجب لفه بـ \`...\` (backtick فردية).
+-   **حوّل المحددات السطرية (inline):** أي نص محاط بـ \`\$...\$\` أو \`\\(...\\)\` يجب لفه بـ \`...\` (backtick فردية).
 -   **حوّل المحددات العرض (display):** أي نص محاط بـ \`$$...$$\` أو \`\\[...\\]\` يجب لفه بـ \`\`...\`\` (backticks مزدوجة).
 -   **حوّل البيئات المعقدة:** أي كتلة LaTeX تبدأ بـ \`\\begin{...}\` وتنتهي بـ \`\\end{...}\` يجب أن تُعامل **دائمًا** كمعادلة عرض وتُلف بـ \`\`...\`\` (backticks مزدوجة).
 
 لا تخترع أي محتوى. اتبع القواعد بدقة.
+
 
 **نماذج:**
 ${examples}
@@ -1375,7 +1383,7 @@ ${rawText}
                 enhanceBtn.innerHTML = `<div class="spinner"></div> ${this.language === this.Language.ARABIC ? 'جاري التنسيق...' : 'Formatting...'}`;
                 enhanceBtn.disabled = true;
                 try {
-                    const prompt = this.buildAdvancedFormattingPrompt(rawText);
+                    const prompt = this.buildAdvancedFormattingPrompt(rawText, this.activeQuestionType);
                     const aiText = await this._callAI(prompt, apiKey);
                     const finalFormatted = this.postProcessAIFormatted(aiText || rawText);
                     if (finalFormatted) {
