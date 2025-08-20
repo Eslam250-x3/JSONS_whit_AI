@@ -2772,10 +2772,16 @@ ${questionRequests.join('\n')}
 
 ${customPrompt ? `Additional Instructions: ${customPrompt}` : ''}
 
+**Mathematics Rules (Crucial and must be followed precisely):**
+- Wrap inline math like $x^2$ with single backticks: \`x^2\`.
+- Wrap display math like $$...$$ or LaTeX environments like \\begin{...} with double backticks: \`\`...\`\`.
+- **Never** generate math with '$' delimiters. Always use backticks.
+
 Strictly follow this formatting for each question:
 - Start with 'type: [question_type]'.
 - Use [STEM] for the question text.
 - Use [CHOICES] for MCQ/MRQ options, with '*' for correct and '-' for incorrect answers.
+- **For any list like [CHOICES] or [GAPS], you MUST put each item on a new line.** // <<< أضف هذا السطر
 - Use [ANSWER] for string/frq answers.
 - Use [MATCHING_PAIRS] for matching questions, separated by '|'.
 - Use [GAPS] for gap-fill answers.
