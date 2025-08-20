@@ -775,13 +775,35 @@
                     container.appendChild(button);
                 }
             }
-            setActiveQuestionType(typeKey) {
-                    this.userExplicitlySelectedType = true; // <<< ضيف السطر ده هنا
-                this.activeQuestionType = typeKey;
-                document.querySelectorAll('.q-type-btn').forEach(btn => {
-                    btn.classList.toggle('active', btn.dataset.type === typeKey);
-                });
-            }
+            etActiveQuestionType(typeKey) {
+    // --- بداية الجزء الجديد: منطق إلغاء التفعيل ---
+    // التحقق مما إذا كان المستخدم يضغط على الزر النشط حاليًا بالفعل
+    if (this.activeQuestionType === typeKey && this.userExplicitlySelectedType) {
+        
+        // إذا كان الأمر كذلك، قم بإلغاء تنشيطه والعودة إلى وضع "الكشف التلقائي"
+        this.userExplicitlySelectedType = false;
+        
+        // إعادة التعيين إلى النوع الافتراضي للاتساق
+        this.activeQuestionType = this.QuestionType.MCQ; 
+
+        // إزالة فئة 'active' من جميع الأزرار ليعكس التغيير بصريًا
+        document.querySelectorAll('.q-type-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        
+        return; // الخروج من الدالة لأن مهمتنا انتهت هنا
+    }
+    // --- نهاية الجزء الجديد ---
+
+    // الجزء القديم: يعمل عندما يتم الضغط على زر جديد
+    this.userExplicitlySelectedType = true;
+    this.activeQuestionType = typeKey;
+
+    // تحديث النمط المرئي لجميع الأزرار
+    document.querySelectorAll('.q-type-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.type === typeKey);
+    });
+}
             // ***************************************************************
             // ** ID & VALIDATION LOGIC **
             // ***************************************************************
