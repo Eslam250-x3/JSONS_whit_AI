@@ -1056,16 +1056,12 @@ ${rawText}
             }
             
             organizeTrueFalseChoices(choices, originalAnswers) {
-                const trueChoices = choices.filter(choice => 
-                    /^(صواب|true|صحيح)$/i.test(choice.trim())
-                );
-                const falseChoices = choices.filter(choice => 
-                    /^(خطأ|false|غلط)$/i.test(choice.trim())
-                );
-                
-                // Always put True/صواب first, then False/خطأ
-                return [...trueChoices, ...falseChoices];
-            }
+    const trueChoices = choices.filter(choice => /^(صواب|true|صحيح)$/i.test(choice.trim()));
+    const falseChoices = choices.filter(choice => /^(خطأ|false|غلط)$/i.test(choice.trim()));
+    
+    // Always put True/صواب first, then False/خطأ
+    return [...trueChoices, ...falseChoices];
+}
 
             normalizeOneBlock(block) {
                 // Ensure [STEM]
