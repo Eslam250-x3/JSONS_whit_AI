@@ -293,7 +293,7 @@
                 <div class="input-section">
                     <textarea id="questionInput" placeholder="أدخل محتوى السؤال هنا...
 سيتم تجاهل أي بيانات وصفية مثل id أو language (ما عدا type الذي سيضاف تلقائيًا).
-استخدم الوسوم مثل [STEM] و [CHOICES] لتحديد أجزاء السؤال.
+استخدم الوسوم مثل @STEM و @CHOICES لتحديد أجزاء السؤال.
 افصل بين كل سؤال بـ ---
 "></textarea>
                 </div>
@@ -1143,54 +1143,54 @@
                 const examples = `
 مثال MCQ (نجمة واحدة فقط):
 type: mcq
-[STEM]
+@STEM
 ما عاصمة فرنسا؟
-[CHOICES]
+@CHOICES
 - لندن
 * باريس
 - مدريد
 ---
 مثال صواب أم خطأ:
 type: mcq
-[STEM]
+@STEM
 هل باريس عاصمة فرنسا؟ صواب أم خطأ؟
-[CHOICES]
+@CHOICES
 * صواب
 - خطأ
 ---
 مثال MRQ (أكثر من نجمة):
 type: mrq
-[STEM]
+@STEM
 اختر كل اللغات البرمجية:
-[CHOICES]
+@CHOICES
 * Python
 - HTML
 * JavaScript
 ---
 مثال Matching:
 type: matching
-[STEM]
+@STEM
 صل الدول بعواصمها:
-[MATCHING_PAIRS]
+@MATCHING_PAIRS
 فرنسا | باريس
 ألمانيا | برلين
 ---
 مثال GapText:
 type: gapText
-[STEM]
-الكوكب [BLANK] هو الأكبر وله [BLANK] قمراً.
-[GAPS]
+@STEM
+الكوكب @BLANK هو الأكبر وله @BLANK قمراً.
+@GAPS
 المشتري
 79
 ---
 مثال معادلة معقدة:
 type: string
-[STEM]
+@STEM
 أوجد حل النظام التالي:
 \`\`
 \\begin{cases} x+y=5 \\\\ x-y=1 \\end{cases}
 \`\`
-[ANSWER]
+@ANSWER
 x=3, y=2
 `;
                 let typeInstruction = '1.  **حدد نوع** كل سؤال بناءً على محتواه.'; // دي الجملة الافتراضية
@@ -1208,21 +1208,21 @@ ${typeInstruction}
 
 2.  **أخرج كل سؤال بالتنسيق التالي دون أي تغيير في المحتوى:**
     -   سطر بيانات وصفية في الأعلى، مثال: \`type: mcq\`
-    -   وسم \`[STEM]\` لنص السؤال الرئيسي.
-    -   وسوم المحتوى حسب نوع السؤال (\`[CHOICES]\`, \`[MATCHING_PAIRS]\`, \`[GAPS]\`, \`[ANSWER]\`).
+    -   وسم \`@STEM\` لنص السؤال الرئيسي.
+    -   وسوم المحتوى حسب نوع السؤال (\`@CHOICES\`, \`@MATCHING_PAIRS\`, \`@GAPS\`, \`@ANSWER\`).
     -   استخدم \`---\` للفصل بين كل سؤال وآخر.
 
 **قواعد أنواع الأسئلة (مهم):**
 -   **MCQ/MRQ:** استخدم \`*\` قبل الإجابة الصحيحة و \`-\` قبل الخاطئة. **MCQ** يجب أن يحتوي على نجمة واحدة فقط، بينما **MRQ** يمكن أن يحتوي على نجمة واحدة أو أكثر.
 -   **أسئلة الصواب والخطأ:** الأسئلة التي تحتوي على "صواب أم خطأ"، "خطأ أم صواب"، "true or false"، "false or true" يجب تنسيقها كـ MCQ مع وضع "صواب" أو "True" كأول اختيار.
--   **Matching:** يجب أن تكون الأزواج في \`[MATCHING_PAIRS]\` مفصولة بـ \`|\`.
--   **GapText:** استخدم \`[BLANK]\` في نص السؤال لكل فجوة، وضع الإجابات بالترتيب في \`[GAPS]\`.
--   **Input Box:** يجب أن تكون الإجابة في \`[ANSWER]\` بصيغة \`القيمة | الوحدة\` أو \`القيمة\` فقط إذا لم تكن هناك وحدة.
+-   **Matching:** يجب أن تكون الأزواج في \`@MATCHING_PAIRS\` مفصولة بـ \`|\`.
+-   **GapText:** استخدم \`@BLANK\` في نص السؤال لكل فجوة، وضع الإجابات بالترتيب في \`@GAPS\`.
+-   **Input Box:** يجب أن تكون الإجابة في \`@ANSWER\` بصيغة \`القيمة | الوحدة\` أو \`القيمة\` فقط إذا لم تكن هناك وحدة.
 
 **قواعد الرياضيات (مهمة للغاية ويجب اتباعها بدقة):**
 -   **لا تقم أبدًا بتعديل** محتوى أو صيغة أي كود LaTeX.
 -   **حوّل المحددات السطرية (inline):** أي نص محاط بـ \`\$...\$\` أو \`\\(...\\)\` يجب لفه بـ \`...\` (backtick فردية).
--   **حوّل المحددات العرض (display):** أي نص محاط بـ \`\$$...\$$\` أو \`\\[...\\]\` يجب لفه بـ \`\`...\`\` (backticks مزدوجة).
+-   **حوّل المحددات العرض (display):** أي نص محاط بـ \`\$\$...\$\$\` أو \`\\[...\\]\` يجب لفه بـ \`\`...\`\` (backticks مزدوجة).
 -   **حوّل البيئات المعقدة:** أي كتلة LaTeX تبدأ بـ \`\\begin{...}\` وتنتهي بـ \`\\end{...}\` يجب أن تُعامل **دائمًا** كمعادلة عرض وتُلف بـ \`\`...\`\` (backticks مزدوجة).
 
 لا تخترع أي محتوى. اتبع القواعد بدقة.
@@ -1244,21 +1244,21 @@ You are an expert question formatter and a meticulous academic assistant. Your t
 2.  **Auto-detect** the type for each question from: mcq, mrq, oq, gapText, matching, string, frq, frq_ai, input_box.
 3.  **Format each question as follows:**
     -   A metadata line at the top, e.g., \`type: mcq\`
-    -   A \`[STEM]\` tag for the main question text.
-    -   Content tags based on the question type (\`[CHOICES]\`, \`[MATCHING_PAIRS]\`, \`[GAPS]\`, \`[ANSWER]\`).
+    -   A \`@STEM\` tag for the main question text.
+    -   Content tags based on the question type (\`@CHOICES\`, \`@MATCHING_PAIRS\`, \`@GAPS\`, \`@ANSWER\`).
     -   Use \`---\` to separate each question.
 
 **Question Type Rules (Important):**
 -   **MCQ/MRQ:** Use \`*\` before a correct answer and \`-\` before an incorrect one. **MCQ** must have exactly one star, while **MRQ** can have one or more.
 -   **True/False Questions:** Questions containing "true or false", "false or true", "صواب أم خطأ", "خطأ أم صواب" should be formatted as MCQ with "True" or "صواب" as the first choice.
--   **Matching:** Pairs under \`[MATCHING_PAIRS]\` must be separated by \`|\`.
--   **GapText:** Use \`[BLANK]\` in the stem for each gap, and place the ordered answers under \`[GAPS]\`.
--   **Input Box:** The answer under \`[ANSWER]\` should be in the format \`value | unit\` or just \`value\` if there is no unit.
+-   **Matching:** Pairs under \`@MATCHING_PAIRS\` must be separated by \`|\`.
+-   **GapText:** Use \`@BLANK\` in the stem for each gap, and place the ordered answers under \`@GAPS\`.
+-   **Input Box:** The answer under \`@ANSWER\` should be in the format \`value | unit\` or just \`value\` if there is no unit.
 
 **Mathematics Rules (Crucial and must be followed precisely):**
 -   **Never modify** the content or syntax of any LaTeX code.
 -   **Convert inline delimiters:** Any text surrounded by \`\$...\$\` or \`\\(...\\)\` must be wrapped with \`...\` (single backticks).
--   **Convert display delimiters:** Any text surrounded by \`\$$...\$$\` or \`\\[...\\]\` must be wrapped with \`\`...\`\` (double backticks).
+-   **Convert display delimiters:** Any text surrounded by \`\$\$...\$\$\` or \`\\[...\\]\` must be wrapped with \`\`...\`\` (double backticks).
 -   **Convert complex environments:** Any LaTeX block that starts with \`\\begin{...}\` and ends with \`\\end{...}\` must **always** be treated as display math and wrapped with \`\`...\`\` (double backticks).
 
 Do not invent any content. Follow the rules precisely.
@@ -1293,10 +1293,10 @@ ${rawText}
             }
             
             autoDetectTypeFromContent(block) {
-                const hasChoices = /\[CHOICES\]/i.test(block);
-                const hasAnswer = /\[ANSWER\]/i.test(block);
-                const hasGaps = /\[GAPS/i.test(block) || /\[BLANK\]/i.test(block);
-                const hasMatching = /\[MATCHING_PAIRS\]/i.test(block) || /^\s*.+\s*\|\s*.+$/m.test(block);
+                const hasChoices = /@CHOICES/i.test(block);
+                const hasAnswer = /@ANSWER/i.test(block);
+                const hasGaps = /@GAPS/i.test(block) || /@BLANK/i.test(block);
+                const hasMatching = /@MATCHING_PAIRS/i.test(block) || /^\s*.+\s*\|\s*.+$/m.test(block);
                 const starCount = (block.match(/^\s*\*/gm) || []).length;
                 
                 // Check for True/False questions
@@ -1309,7 +1309,7 @@ ${rawText}
                 if (hasChoices && starCount === 1) return this.QuestionType.MCQ;
                 if (hasChoices && starCount === 0) return this.QuestionType.OQ;
                 if (hasAnswer) {
-                    const ans = (block.match(/\[ANSWER\]([\s\S]*)$/i) || [, ''])[1].trim();
+                    const ans = (block.match(/@ANSWER([\s\S]*)$/i) || [, ''])[1].trim();
                     if (/\|/.test(ans)) return this.QuestionType.INPUT_BOX;
                     return ans.split(/\s+/).length > 12 ? this.QuestionType.FRQ : this.QuestionType.STRING;
                 }
@@ -1317,7 +1317,7 @@ ${rawText}
             }
             
             isTrueFalseQuestion(block) {
-                const stem = (block.match(/\[STEM\]([\s\S]*?)(?=\[|$)/i) || [, ''])[1].trim();
+                const stem = (block.match(/@STEM([\s\S]*?)(?=@|$)/i) || [, ''])[1].trim();
                 const trueFalsePatterns = [
                     /^.*صواب\s+أم\s+خطأ.*$/i,
                     /^.*خطأ\s+أم\s+صواب.*$/i,
@@ -1339,11 +1339,11 @@ ${rawText}
 }
 
             normalizeOneBlock(block) {
-                // Ensure [STEM]
-                if (!/\[STEM\]/i.test(block)) {
+                // Ensure @STEM
+                if (!/@STEM/i.test(block)) {
                     const lines = block.split('\n').filter(l => l.trim() !== '');
                     const first = lines.shift() || '';
-                    block = `[STEM]\n${first}\n` + (lines.length ? lines.join('\n') : '');
+                    block = `@STEM\n${first}\n` + (lines.length ? lines.join('\n') : '');
                 }
                 // Ensure type header
                 if (!/^type:\s*/im.test(block)) {
@@ -1432,20 +1432,20 @@ ${rawText}
                     _contentBlock: contentStr,
                     _editing: false
                 };
-                if (/\[STATEMENT/i.test(contentStr) && /\[PART\]/i.test(contentStr)) {
-                    const statementMatch = contentStr.match(/\[STATEMENT\]([\s\S]*?)(?=\[PART\])/i);
+                if (/@STATEMENT/i.test(contentStr) && /@PART/i.test(contentStr)) {
+                    const statementMatch = contentStr.match(/@STATEMENT([\s\S]*?)(?=@PART)/i);
                     if (statementMatch) { questionData.statement = statementMatch[1].trim(); }
-                    const partRegex = /\[PART\]([\s\S]*?)(?=\[PART\]|$)/gi;
+                    const partRegex = /@PART([\s\S]*?)(?=@PART|$)/gi;
                     const partMatches = contentStr.match(partRegex);
                     if (partMatches) {
                         questionData.parts = partMatches.map(partMatch => {
-                            const partContent = partMatch.replace(/^\[PART\]/i, '').trim();
+                            const partContent = partMatch.replace(/^@PART/i, '').trim();
                             return this._parsePartWithTags(partContent, metadata);
                         });
                     }
                     return questionData;
                 }
-                const hasTags = /\[(STEM|CHOICES|ANSWER|GAPS|MATCHING_PAIRS)\]/i.test(contentStr);
+                const hasTags = /@(STEM|CHOICES|ANSWER|GAPS|MATCHING_PAIRS)/i.test(contentStr);
                 if (hasTags) {
                     questionData.parts.push(this._parsePartWithTags(contentStr, metadata));
                     return questionData;
@@ -1473,7 +1473,7 @@ ${rawText}
                 remainingBlock = lines.slice(contentStartIndex).join('\n');
                 const tagPositions = [];
                 mainTags.forEach(tag => {
-                    const regex = new RegExp(`\\[${tag}\\]`, 'gi');
+                    const regex = new RegExp(`@${tag}`, 'gi');
                     let match;
                     while ((match = regex.exec(remainingBlock)) != null) {
                         tagPositions.push({ tag: tag, index: match.index });
@@ -1483,7 +1483,7 @@ ${rawText}
                 for (let i = 0; i < tagPositions.length; i++) {
                     const currentTag = tagPositions[i];
                     const nextTag = tagPositions[i + 1];
-                    const start = currentTag.index + `[${currentTag.tag}]`.length;
+                    const start = currentTag.index + `@${currentTag.tag}`.length;
                     const end = nextTag ? nextTag.index : remainingBlock.length;
                     const tagContent = remainingBlock.substring(start, end).trim();
                     content[currentTag.tag] = tagContent;
@@ -1516,7 +1516,7 @@ ${rawText}
                 if (isCorrect) answers.push(idx);
             });
             
-            if (this.isTrueFalseQuestion(`[STEM]\n${part.stem}`)) {
+            if (this.isTrueFalseQuestion(`@STEM\n${part.stem}`)) {
                 part.choices = this.organizeTrueFalseChoices(part.choices, answers);
                 if (part.type !== this.QuestionType.OQ) {
                     const trueIndex = part.choices.findIndex(choice => 
@@ -1604,7 +1604,7 @@ ${rawText}
                 if (isCorrect) answers.push(idx);
             });
             
-            if (this.isTrueFalseQuestion(`[STEM]\n${part.stem}`)) {
+            if (this.isTrueFalseQuestion(`@STEM\n${part.stem}`)) {
                 part.choices = this.organizeTrueFalseChoices(part.choices, answers);
                 const trueIndex = part.choices.findIndex(choice => 
                     /^(صواب|true|صحيح)/i.test(choice.trim()) // FIX 1a: Made regex flexible
@@ -1777,9 +1777,9 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                 const lang = globalMetadata.language || this.customization.lang;
                 let processedStem = part.stem;
                 
-                if (processedStem && processedStem.includes('[BLANK]')) {
+                if (processedStem && processedStem.includes('@BLANK')) {
                     const spaceSpan = '<span data-node-type="blank-line" data-node-variation="space">&nbsp;</span>';
-                    processedStem = processedStem.replace(/\[BLANK\]/g, spaceSpan);
+                    processedStem = processedStem.replace(/@BLANK/g, spaceSpan);
                 }
 
                 const partJson = {
@@ -1900,7 +1900,7 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
             }
             _transformGapTextPart(part, lang) {
                 const stem_html_gap = '<span data-node-type="blank-line" data-node-variation="gap"> </span>';
-                const processedStem = (part.stem || '').replace(/\[BLANK\]|_{3,}/g, stem_html_gap);
+                const processedStem = (part.stem || '').replace(/@BLANK|_{3,}/g, stem_html_gap);
                 return {
                     gap_text_keys: (part.answers || []).map(ans => ({ value: ans.value, correct_order: ans.order })),
                     stem: this.processTextForHtml(processedStem, lang),
@@ -2006,7 +2006,7 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
             
             createMathField(equation, language, forceEn = false, questionId, partIndex, fieldType, choiceIndex, mathFieldIndex) {
                 const isArabic = language === this.Language.ARABIC && !forceEn;
-                let latexValue = equation.replace(/\[BLANK\]/g, '\\textBlank');
+                let latexValue = equation.replace(/@BLANK/g, '\\textBlank');
                 if (isArabic && this.config.flags.convertArabicLatex) {
                     latexValue = this.convertToArabicLatex(latexValue);
                 }
@@ -2701,20 +2701,20 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
             // --- TAGS MODAL ---
             populateTagsModal() {
                 const templates = [
-                    { name: 'MCQ', hint: 'إدراج قالب سؤال اختيار من متعدد', content: 'type: mcq\n[STEM]\n\n[CHOICES]\n* \n- \n- \n- \n---\n' },
-                    { name: 'Matching', hint: 'إدراج قالب سؤال توصيل', content: 'type: matching\n[STEM]\n\n[MATCHING_PAIRS]\n | \n | \n---\n' },
-                    { name: 'Gap Text', hint: 'إدراج قالب سؤال ملء فراغات', content: 'type: gapText\n[STEM]\n[BLANK]\n[GAPS]\n\n---\n' },
+                    { name: 'MCQ', hint: 'إدراج قالب سؤال اختيار من متعدد', content: 'type: mcq\n@STEM\n\n@CHOICES\n* \n- \n- \n- \n---\n' },
+                    { name: 'Matching', hint: 'إدراج قالب سؤال توصيل', content: 'type: matching\n@STEM\n\n@MATCHING_PAIRS\n | \n | \n---\n' },
+                    { name: 'Gap Text', hint: 'إدراج قالب سؤال ملء فراغات', content: 'type: gapText\n@STEM\n@BLANK\n@GAPS\n\n---\n' },
                 ];
 
                 const tags = [
-                    { tag: '[STEM]', hint: 'نص السؤال الرئيسي' },
-                    { tag: '[CHOICES]', hint: 'قائمة الاختيارات' },
-                    { tag: '[ANSWER]', hint: 'الإجابة الصحيحة (لأسئلة String, FRQ)' },
-                    { tag: '[GAPS]', hint: 'إجابات ملء الفراغات (كل إجابة في سطر)' },
-                    { tag: '[MATCHING_PAIRS]', hint: 'أزواج المطابقة (افصل بينها بـ |)' },
-                    { tag: '[BLANK]', hint: 'فجوة أو مسافة فارغة داخل النص' },
-                    { tag: '[STATEMENT]', hint: 'النص الاستهلالي الذي يسبق أجزاء السؤال' },
-                    { tag: '[PART]', hint: 'لتقسيم السؤال إلى أجزاء متعددة' },
+                    { tag: '@STEM', hint: 'نص السؤال الرئيسي' },
+                    { tag: '@CHOICES', hint: 'قائمة الاختيارات' },
+                    { tag: '@ANSWER', hint: 'الإجابة الصحيحة (لأسئلة String, FRQ)' },
+                    { tag: '@GAPS', hint: 'إجابات ملء الفراغات (كل إجابة في سطر)' },
+                    { tag: '@MATCHING_PAIRS', hint: 'أزواج المطابقة (افصل بينها بـ |)' },
+                    { tag: '@BLANK', hint: 'فجوة أو مسافة فارغة داخل النص' },
+                    { tag: '@STATEMENT', hint: 'النص الاستهلالي الذي يسبق أجزاء السؤال' },
+                    { tag: '@PART', hint: 'لتقسيم السؤال إلى أجزاء متعددة' },
                     { tag: '[U]', hint: 'لوضع خط تحت النص، استخدمه هكذا: [U]النص[/U]' },
                     { tag: '---', hint: 'خط فاصل بين الأسئلة' },
                 ];
@@ -2809,7 +2809,7 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                         return '- ' + line.replace(/^[a-zA-Z\u0623-\u064A0-9]+[.)]\s*/, '').trim();
                     }).join('\n');
                     
-                    return `type: mcq\n[STEM]\n${stem.trim()}\n[CHOICES]\n${choiceLines}\n---`;
+                    return `type: mcq\n@STEM\n${stem.trim()}\n@CHOICES\n${choiceLines}\n---`;
                 });
 
                 textarea.value = formattedText;
@@ -2891,18 +2891,18 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
             _regenerateQuestionContent(question) {
                 let newContentBlock = '';
                 if (question.statement) {
-                    newContentBlock += `[STATEMENT]\n${question.statement}\n`;
+                    newContentBlock += `@STATEMENT\n${question.statement}\n`;
                 }
 
                 question.parts.forEach(part => {
                     if (question.statement) {
-                        newContentBlock += `[PART]\n`;
+                        newContentBlock += `@PART\n`;
                     }
                     newContentBlock += `type: ${part.type}\n`;
-                    newContentBlock += `[STEM]\n${part.stem}\n`;
+                    newContentBlock += `@STEM\n${part.stem}\n`;
 
                     if (part.type === 'mcq' || part.type === 'mrq' || part.type === 'oq') {
-                        newContentBlock += `[CHOICES]\n`;
+                        newContentBlock += `@CHOICES\n`;
                         const correctAnswers = new Set(Array.isArray(part.answer) ? part.answer : [part.answer]);
                         part.choices.forEach((choice, i) => {
                             const prefix = correctAnswers.has(i) ? '* ' : '- ';
@@ -3113,12 +3113,12 @@ ${customPrompt ? `Additional Instructions: ${customPrompt}` : ''}
 
 Strictly follow this formatting for each question:
 - Start with 'type: [question_type]'.
-- Use [STEM] for the question text.
-- Use [CHOICES] for MCQ/MRQ options, with '*' for correct and '-' for incorrect answers.
-- **For any list like [CHOICES] or [GAPS], you MUST put each item on a new line.** // <<< أضف هذا السطر
-- Use [ANSWER] for string/frq answers.
-- Use [MATCHING_PAIRS] for matching questions, separated by '|'.
-- Use [GAPS] for gap-fill answers.
+- Use @STEM for the question text.
+- Use @CHOICES for MCQ/MRQ options, with '*' for correct and '-' for incorrect answers.
+- **For any list like @CHOICES or @GAPS, you MUST put each item on a new line.** // <<< أضف هذا السطر
+- Use @ANSWER for string/frq answers.
+- Use @MATCHING_PAIRS for matching questions, separated by '|'.
+- Use @GAPS for gap-fill answers.
 - Separate each complete question block with '---'.
 `;
 
