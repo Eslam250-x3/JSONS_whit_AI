@@ -2057,18 +2057,30 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                 return result;
             }
             _transformFRQPart(part, lang) {
-                return { choices: [], answer: this.processTextForHtml(part.answer, lang) };
+                return { choices: [], answer: this._formatAnswerHtml(part.answer, lang) };
             }
             _transformFRQ_AIPart(part, globalMetadata, lang) {
                 const result = {
                     choices: [],
-                    answer: this.processTextForHtml(part.answer, lang)
+                    answer: this._formatAnswerHtml(part.answer, lang)
                 };
                 const aiTemplateId = part.metadata.ai_template_id || globalMetadata.ai_template_id;
                 if (aiTemplateId) {
                     result.ai = { "ai_template_id": Number(aiTemplateId) };
                 }
                 return result;
+            }
+            _formatAnswerHtml(answerText, lang) {
+                if (!answerText) return '';
+                const isAr = lang === this.Language.ARABIC;
+                const dirAttr = isAr ? ' dir="rtl"' : '';
+                const lines = String(answerText).split(/\n/).map(l => l.trim()).filter(Boolean);
+                const isList = lines.length > 1 && lines.every(l => /^([§\-\*\d]+[\).:]?|•)\s+/.test(l));
+                if (isList) {
+                    const items = lines.map(l => l.replace(/^([§\-\*\d]+[\).:]?|•)\s+/, '')).map(item => `<li class="LexicalTheme__listItem" style="text-align: justify;"><span style="white-space: pre-wrap;">${DOMPurify.sanitize(item)}</span></li>`).join('');
+                    return `<ul class="LexicalTheme__list"${dirAttr}>${items}</ul>`;
+                }
+                return this.processTextForHtml(answerText, lang);
             }
             _transformInputBoxPart(part) {
                 const answer = {
@@ -2116,25 +2128,55 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
             processTextForHtml(text, language, questionId, partIndex, fieldType, choiceIndex = -1) {
                 if (!text) return '';
                 const direction = language === this.Language.ARABIC ? ' dir="rtl"' : '';
-                
+
                 // FIX: Changed from 5 or more underscores to 4 or more, per user request.
                 let processedText = text.replace(/_{4,}/g, '<span data-node-type="blank-line" data-node-variation="space">&nbsp;</span>');
 
-                // POEM: transform @POEM ... @END_POEM blocks into styled HTML
-                processedText = processedText.replace(/@POEM[\t ]*\n([\s\S]*?)\n@END_POEM/g, (_, body) => {
-                    const verses = body
+                // If the text contains a poem block, split into pre/poem/post segments and render exactly as required
+                const poemRegex = /@POEM[\t ]*\n([\s\S]*?)\n@END_POEM/;
+                if (poemRegex.test(processedText)) {
+                    const match = processedText.match(poemRegex);
+                    const preText = processedText.slice(0, match.index).trim();
+                    const poemBody = match[1] || '';
+                    const postText = processedText.slice(match.index + match[0].length).trim();
+
+                    const renderParagraph = (plainText) => {
+                        if (!plainText) return '';
+                        // split into math/plain chunks like below
+                        const chunks = plainText.split(/(``[\s\S]*?``|`[\s\S]*?`|<span data-node-type="blank-line" data-node-variation="gap"> <\/span>|<span data-node-type="blank-line" data-node-variation="space">&nbsp;<\/span>)/);
+                        let html = '';
+                        let mfIndex = 0;
+                        for (const chunk of chunks) {
+                            if (!chunk) continue;
+                            if (chunk.startsWith('``') && chunk.endsWith('``')) {
+                                html += this.createMathField(chunk.slice(2, -2), language, true, questionId, partIndex, fieldType, choiceIndex, mfIndex++);
+                            } else if (chunk.startsWith('`') && chunk.endsWith('`')) {
+                                html += this.createMathField(chunk.slice(1, -1), language, false, questionId, partIndex, fieldType, choiceIndex, mfIndex++);
+                            } else if (chunk.includes('data-node-type="blank-line"')) {
+                                html += chunk;
+                            } else {
+                                let t = chunk;
+                                t = t.replace(/\[U\]([\s\S]+?)\[\/U\]/g, '<u>$1</u>');
+                                t = t.replace(/(^|\n)\s*-\s+/g, `$1§ `);
+                                html += `<span style="white-space: pre-wrap;">${DOMPurify.sanitize(t)}</span>`;
+                            }
+                        }
+                        return `<p class="LexicalTheme__paragraph" style="text-align: justify;"${direction}>${html}</p>`;
+                    };
+
+                    const verses = poemBody
                         .split(/\n+/)
                         .map(line => line.trim())
                         .filter(Boolean)
                         .map(line => `<p>${DOMPurify.sanitize(line)}</p>`) // each verse becomes a <p>
                         .join('');
-                    // wrap in container and article
-                    return `<div class="PoemContainer"><article class="Poem vertical-split">${verses}</article></div>`;
-                });
+                    const poemHtml = `<div class="PoemContainer"><article class="Poem vertical-split">${verses}</article></div>`;
+                    return `${renderParagraph(preText)}${poemHtml}${renderParagraph(postText)}`;
+                }
 
+                // Otherwise, render as a single justified paragraph
                 const parts = processedText.split(/(``[\s\S]*?``|`[\s\S]*?`|<span data-node-type="blank-line" data-node-variation="gap"> <\/span>|<span data-node-type="blank-line" data-node-variation="space">&nbsp;<\/span>)/);
                 let finalHtmlContent = "";
-                
                 let mathFieldIndex = 0;
                 for (const part of parts) {
                     if (!part) continue;
@@ -2146,14 +2188,12 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                         finalHtmlContent += part;
                     } else {
                         let textPart = part;
-                        // NEW: Handle underline tag [U]...[/U] before sanitizing
                         textPart = textPart.replace(/\[U\]([\s\S]+?)\[\/U\]/g, '<u>$1</u>');
-                        // Replace list hyphens with the requested marker (§) when starting a line
                         textPart = textPart.replace(/(^|\n)\s*-\s+/g, `$1§ `);
                         finalHtmlContent += `<span style="white-space: pre-wrap;">${DOMPurify.sanitize(textPart)}</span>`;
                     }
                 }
-                return `<p class="LexicalTheme__paragraph"${direction}>${finalHtmlContent}</p>`;
+                return `<p class="LexicalTheme__paragraph" style="text-align: justify;"${direction}>${finalHtmlContent}</p>`;
             }
             
             createMathField(equation, language, forceEn = false, questionId, partIndex, fieldType, choiceIndex, mathFieldIndex) {
