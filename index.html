@@ -1912,10 +1912,9 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                     choices: null,
                     answer: [part.answer]
                 };
-                const aiTemplateId = part.metadata.ai_template_id || globalMetadata.ai_template_id;
-                if (aiTemplateId) {
-                    result.ai = { "ai_template_id": Number(aiTemplateId) };
-                }
+                // دائمًا استخدم قيمة string_ai_template_id الثابتة بدلاً من أي قيمة أخرى
+                const string_ai_template_id = 593158513739;
+                result.ai = { "ai_template_id": Number(string_ai_template_id) };
                 return result;
             }
             _transformFRQPart(part, lang) {
