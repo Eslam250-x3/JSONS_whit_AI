@@ -6,15 +6,11 @@
     <title>محول الأسئلة الذكي المتطور - النسخة النهائية</title>
     <!-- Handsontable CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/handsontable@14.3.0/dist/handsontable.min.css" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        :root { --app-font: "Noto Naskh Arabic", 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         /* --- Basic Setup --- */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: var(--app-font);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh; padding: 20px; color: #333;
             display: flex; align-items: center; justify-content: center;
@@ -62,7 +58,7 @@
         .input-section textarea, .edit-textarea {
             width: 100%; min-height: 250px; padding: 20px; border: 2px solid #e5e7eb; border-radius: 15px;
             font-size: 14px; line-height: 1.6; resize: vertical; transition: all 0.3s ease;
-            background: white; font-family: "Noto Naskh Arabic", 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin-bottom: 10px;
+            background: white; font-family: 'Courier New', monospace; margin-bottom: 10px;
         }
         .input-section textarea:focus, .edit-textarea:focus { outline: none; border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
         .api-key-section { margin-top: 15px; }
@@ -88,7 +84,7 @@
         .btn-ai { background: linear-gradient(135deg, #ec4899 0%, #d946ef 100%); color: white; }
         .btn-ai:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(236, 72, 153, 0.3); }
         .json-output {
-            background: #1e293b; color: #e2e8f0; padding: 20px; border-radius: 12px; font-family: var(--app-font);
+            background: #1e293b; color: #e2e8f0; padding: 20px; border-radius: 12px; font-family: 'Courier New', monospace;
             font-size: 13px; line-height: 1.4; overflow-x: auto; white-space: pre-wrap; max-height: 500px; overflow-y: auto; border: 1px solid #334155; flex-grow: 1; margin-top: 15px;
         }
         .json-output .key { color: #60a5fa; } .json-output .string { color: #34d399; } .json-output .number { color: #fbbf24; }
@@ -99,22 +95,6 @@
         .confidence-bar { width: 100px; height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden; }
         .confidence-fill { height: 100%; background: linear-gradient(90deg, #ef4444, #f59e0b, #10b981); border-radius: 4px; transition: width 0.5s ease-in-out; }
         #questionsPreview { flex-grow: 1; overflow-y: auto; max-height: 70vh; }
-        /* --- Poem Styling --- */
-        .PoemContainer { margin: 12px 0; }
-        .Poem { font-size: 1.25em; line-height: 2; }
-        .Poem.vertical-split {
-            display: grid; grid-template-columns: 1fr 1fr; column-gap: 2rem; row-gap: .25em;
-            grid-auto-flow: row dense;
-            direction: rtl; text-align: center; align-items: start; justify-items: stretch; align-content: start; justify-content: center;
-        }
-        .Poem.vertical-split p { margin: 0.25em 0; white-space: pre-wrap; }
-        /* In RTL: place odd lines in the right column (2), even in the left column (1) */
-        .Poem.vertical-split p:nth-child(odd) { grid-column: 2 / 3; justify-self: end; text-align: right; }
-        .Poem.vertical-split p:nth-child(even) { grid-column: 1 / 2; justify-self: start; text-align: left; }
-        @media (max-width: 768px) {
-            .Poem.vertical-split { grid-template-columns: 1fr; }
-            .Poem.vertical-split p { grid-column: 1 !important; text-align: right !important; }
-        }
         .question-preview { background: white; padding: 20px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); animation: fadeIn 0.5s ease; position: relative; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .question-actions { position: absolute; top: 10px; left: 10px; display: none; gap: 8px; z-index: 10; }
@@ -122,8 +102,6 @@
         .action-btn { background: rgba(249, 250, 251, 0.8); border: 1px solid #d1d5db; border-radius: 50%; width: 32px; height: 32px; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease; backdrop-filter: blur(2px); }
         .action-btn:hover { background: #4f46e5; border-color: #4f46e5; color: white; transform: scale(1.1); }
         .action-btn:disabled { opacity: 0.4; cursor: not-allowed; background: #e5e7eb; }
-        /* Justify paragraph content */
-        .LexicalTheme__paragraph { text-align: justify; text-justify: inter-word; }
         .validation-warning {
             position: absolute;
             top: 15px;
@@ -158,7 +136,6 @@
         .spinner { border: 4px solid #f3f4f6; border-top: 4px solid #4f46e5; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 15px; }
         .btn .spinner { width: 20px; height: 20px; margin: 0; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        button, input, select, textarea { font-family: var(--app-font); }
         .message-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 1000; display: flex; flex-direction: column; align-items: center; gap: 10px; }
         .message { padding: 15px 25px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); animation: slideIn 0.5s ease, fadeOut 0.5s ease 3.5s forwards; font-weight: 500; min-width: 300px; text-align: center; position: relative; }
         .message.error { background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; }
@@ -179,8 +156,6 @@
         #csvModal .hot-container, #aiTemplateModal .hot-container { margin-bottom: 18px; width: 100%; }
         #csvModal .btn, #aiTemplateModal .btn, #subjectTemplateModal .btn { min-width: 120px; }
         #csvModal .csv-warning { color: #dc2626; font-weight: bold; margin-bottom: 10px; }
-        /* Handsontable font */
-        .handsontable, .handsontable table, .handsontable input, .htCore { font-family: var(--app-font); }
         
         math-field {
             border: 1px solid #ddd; padding: 2px 5px; border-radius: 4px; font-size: 1.1em; 
@@ -246,7 +221,7 @@
         }
         .tag-btn {
             padding: 10px;
-            font-family: "Noto Naskh Arabic", 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Courier New', monospace;
             font-weight: bold;
             background: #f8fafc;
             border: 1px solid #e2e8f0;
@@ -299,28 +274,10 @@
             .controls { flex-direction: column; } .btn { width: 100%; } .question-type-selector { grid-template-columns: 1fr 1fr; }
             .generation-content { grid-template-columns: 1fr; }
         }
-        /* --- Rich Text Editor Polishing --- */
-        .ck.ck-editor {
-            border-radius: 12px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.04);
-        }
-        .ck.ck-editor__top {
-            background: #f8fafc;
-        }
-        .ck.ck-toolbar {
-            border: 2px solid #e5e7eb !important; border-bottom: none !important;
-        }
-        .ck.ck-content {
-            min-height: 280px; border: 2px solid #e5e7eb !important; border-top: none !important;
-            border-radius: 0 0 12px 12px; font-size: 14px; line-height: 1.7; padding: 16px;
-            background: #fff; font-family: var(--app-font);
-        }
-        .ck-focused .ck.ck-content {
-            border-color: #4f46e5 !important; box-shadow: 0 0 0 3px rgba(79,70,229,0.1);
-        }
     </style>
 </head>
 <body>
-    <div id="messageContainer" class="message-container" aria-live="polite"></div>
+    <div id="messageContainer" class="message-container"></div>
     <div class="container">
         <div class="header">
             <div class="ai-badge">🤖 AI Powered</div>
@@ -462,7 +419,7 @@
         </div>
     </div>
     <!-- Tags Modal -->
-    <div id="tagsModal" role="dialog" aria-modal="true" aria-labelledby="tagsModalHeader">
+    <div id="tagsModal">
         <div id="tagsModalHeader">
             <span>إدراج وسم (Tag)</span>
             <button id="tags-modal-close-btn" aria-label="إغلاق">×</button>
@@ -479,10 +436,10 @@
         </div>
     </div>
     <!-- Generation Modal -->
-    <div id="generationModalBg" role="dialog" aria-modal="true" aria-labelledby="generation-title">
+    <div id="generationModalBg">
         <div id="generationModal">
             <div class="generation-header">
-                <h2 id="generation-title">🚀 توليد أسئلة بالذكاء الاصطناعي</h2>
+                <h2>🚀 توليد أسئلة بالذكاء الاصطناعي</h2>
             </div>
             <div class="generation-content">
                 <div class="generation-column">
@@ -588,8 +545,6 @@
     <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/handsontable@14.3.0/dist/handsontable.min.js"></script>
     <script src="https://unpkg.com/mathlive"></script>
-    <script src="https://cdn.ckeditor.com/ckeditor5/41.3.1/super-build/ckeditor.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" id="MathJax-script"></script>
     <script>
     document.addEventListener('DOMContentLoaded', () => {
         class AIQuestionConverter {
@@ -953,75 +908,6 @@
                 this._updateApiProviderUI();
                 this.populateSourceIdDropdown();
                 this.logger.info("Application initialized successfully.");
-                this.initializeRichEditor();
-            }
-            getInputText() {
-                try {
-                    if (this.richEditor) {
-                        const html = this.richEditor.getData();
-                        const div = document.createElement('div');
-                        div.innerHTML = DOMPurify.sanitize(html, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] });
-                        return div.textContent || '';
-                    }
-                } catch (_) {}
-                return document.getElementById('questionInput').value || '';
-            }
-            setInputText(text) {
-                const safe = typeof text === 'string' ? text : '';
-                try {
-                    if (this.richEditor) {
-                        this.richEditor.setData(safe.replace(/\n/g, '<br>'));
-                    }
-                } catch (_) {}
-                const el = document.getElementById('questionInput');
-                if (el) el.value = safe;
-            }
-            initializeRichEditor() {
-                const textarea = document.getElementById('questionInput');
-                if (!textarea || typeof ClassicEditor === 'undefined') return;
-                ClassicEditor.create(textarea, {
-                    language: this.language === 'ar' ? 'ar' : 'en',
-                    placeholder: textarea.placeholder || '',
-                    toolbar: [ 'heading', '|', 'bold', 'italic', 'link', 'bulletedList', 'numberedList', 'blockQuote', 'codeBlock', 'math', '|', 'undo', 'redo' ],
-                    codeBlock: {
-                        languages: [
-                            { language: 'plaintext', label: 'Plain text' },
-                            { language: 'javascript', label: 'JavaScript' },
-                            { language: 'python', label: 'Python' },
-                            { language: 'html', label: 'HTML' },
-                            { language: 'css', label: 'CSS' }
-                        ]
-                    },
-                    math: {
-                        engine: 'mathjax',
-                        lazyLoad: undefined,
-                        outputType: 'span',
-                        enablePreview: true
-                    },
-                    mathjaxLib: 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js'
-                }).then(editor => {
-                    this.richEditor = editor;
-                    try {
-                        const initial = (textarea.value || '').replace(/\n/g, '<br>');
-                        if (initial) editor.setData(initial);
-                        editor.editing.view.change(writer => {
-                            writer.setAttribute('dir', this.language === 'ar' ? 'rtl' : 'ltr', editor.editing.view.document.getRoot());
-                        });
-                    } catch (_) {}
-                    editor.model.document.on('change:data', () => {
-                        const html = editor.getData();
-                        const div = document.createElement('div');
-                        div.innerHTML = DOMPurify.sanitize(html, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] });
-                        const plain = div.textContent || '';
-                        textarea.value = plain;
-                        clearTimeout(this.autoSaveTimeout);
-                        this.autoSaveTimeout = setTimeout(() => this.autoSaveContent(), 1000);
-                        clearTimeout(this.validationTimeout);
-                        this.validationTimeout = setTimeout(() => this.runLiveValidation(), 500);
-                    });
-                }).catch(err => {
-                    this.logger.warn('CKEditor initialization failed');
-                });
             }
             // Safe HTML setter (global sanitizer)
             setSafeHTML(el, html) {
@@ -1029,7 +915,7 @@
                     ALLOW_DATA_ATTR: true,
                     ALLOW_CUSTOM_ELEMENTS: true,
                     // ADD 'u' to allowed tags for underline
-                    ADD_TAGS: ['math-field','span','p','div','strong','ul', 'u', 'li', 'h4', 'h5', 'br', 'b','article'],
+                    ADD_TAGS: ['math-field','span','p','div','strong','ul', 'u', 'li', 'h4', 'h5', 'br', 'b'],
                     ADD_ATTR: ['value','locale','lang','class','dir','style','data-node-type','data-node-variation', 'title', 'aria-label', 'data-question-id', 'data-part-index', 'data-field-type', 'data-choice-index', 'data-math-index', 'default-mode', 'data-tag', 'data-interactive']
                 });
                 el.innerHTML = safe;
@@ -1107,30 +993,6 @@
                         if (document.getElementById('subjectTemplateModalBg').style.display === 'flex') this.closeSubjectTemplateModal();
                         if (document.getElementById('tagsModal').style.display === 'block') this.toggleTagsModal(false);
                         if (document.getElementById('generationModalBg').style.display === 'flex') this.closeGenerationModal();
-                    }
-                });
-                // Focus trap for open modals
-                document.addEventListener('keydown', (e) => {
-                    if (e.key !== 'Tab') return;
-                    const openModals = [
-                        document.getElementById('generationModalBg').style.display === 'flex' && document.getElementById('generationModal'),
-                        document.getElementById('csvModalBg').style.display === 'flex' && document.getElementById('csvModal'),
-                        document.getElementById('aiTemplateModalBg').style.display === 'flex' && document.getElementById('aiTemplateModal'),
-                        document.getElementById('subjectTemplateModalBg').style.display === 'flex' && document.getElementById('subjectTemplateModal'),
-                        document.getElementById('customizeModal').style.display === 'flex' && document.getElementById('customizeModal'),
-                        document.getElementById('tagsModal').style.display === 'block' && document.getElementById('tagsModal')
-                    ].filter(Boolean);
-                    if (openModals.length === 0) return;
-                    const modal = openModals[0];
-                    const focusable = modal.querySelectorAll('a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])');
-                    if (focusable.length === 0) return;
-                    const first = focusable[0];
-                    const last = focusable[focusable.length - 1];
-                    const active = document.activeElement;
-                    if (e.shiftKey) {
-                        if (active === first) { e.preventDefault(); last.focus(); }
-                    } else {
-                        if (active === last) { e.preventDefault(); first.focus(); }
                     }
                 });
                 document.getElementById('questionsPreview').addEventListener('click', (event) => {
@@ -1801,7 +1663,7 @@ ${rawText}
                     this.showMessage(this.language === this.Language.ARABIC ? 'الرجاء إدخال مفتاح API أولاً' : 'Please enter an API key first', 'warning');
                     return;
                 }
-                const rawText = this.getInputText().trim();
+                const rawText = document.getElementById('questionInput').value.trim();
                 if (!rawText) {
                     this.showMessage(this.language === this.Language.ARABIC ? 'الرجاء إدخال النص أولاً' : 'Please enter text first', 'warning');
                     return;
@@ -1824,7 +1686,7 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                     const aiText = await this._callAI(prompt, apiKey);
                     const finalFormatted = this.postProcessAIFormatted(aiText || rawText);
                     if (finalFormatted) {
-                        this.setInputText(finalFormatted);
+                        document.getElementById('questionInput').value = finalFormatted;
                         this.showMessage(this.language === this.Language.ARABIC ? 'تم تنسيق النص بنجاح! يمكنك الآن تحليله.' : 'Text formatted successfully! You can now analyze it.', 'success');
                     } else {
                         this.showMessage(this.language === this.Language.ARABIC ? 'فشل في تنسيق النص. حاول مرة أخرى.' : 'Failed to format text. Please try again.', 'error');
@@ -2048,39 +1910,26 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
             _transformStringPart(part, globalMetadata, lang) {
                 const result = {
                     choices: null,
-                    answer: [this.processTextForHtml(part.answer, lang)]
+                    answer: [part.answer]
                 };
-                const aiTemplateId = part.metadata.ai_template_id || globalMetadata.ai_template_id;
-                if (aiTemplateId) {
-                    result.ai = { "ai_template_id": Number(aiTemplateId) };
-                }
+                // دائمًا استخدم قيمة string_ai_template_id الثابتة بدلاً من أي قيمة أخرى
+                const string_ai_template_id = 593158513739;
+                result.ai = { "ai_template_id": Number(string_ai_template_id) };
                 return result;
             }
             _transformFRQPart(part, lang) {
-                return { choices: [], answer: this._formatAnswerHtml(part.answer, lang) };
+                return { choices: [], answer: this.processTextForHtml(part.answer, lang) };
             }
             _transformFRQ_AIPart(part, globalMetadata, lang) {
                 const result = {
                     choices: [],
-                    answer: this._formatAnswerHtml(part.answer, lang)
+                    answer: this.processTextForHtml(part.answer, lang)
                 };
                 const aiTemplateId = part.metadata.ai_template_id || globalMetadata.ai_template_id;
                 if (aiTemplateId) {
                     result.ai = { "ai_template_id": Number(aiTemplateId) };
                 }
                 return result;
-            }
-            _formatAnswerHtml(answerText, lang) {
-                if (!answerText) return '';
-                const isAr = lang === this.Language.ARABIC;
-                const dirAttr = isAr ? ' dir="rtl"' : '';
-                const lines = String(answerText).split(/\n/).map(l => l.trim()).filter(Boolean);
-                const isList = lines.length > 1 && lines.every(l => /^([§\-\*\d]+[\).:]?|•)\s+/.test(l));
-                if (isList) {
-                    const items = lines.map(l => l.replace(/^([§\-\*\d]+[\).:]?|•)\s+/, '')).map(item => `<li class="LexicalTheme__listItem" style="text-align: justify;"><span style="white-space: pre-wrap;">${DOMPurify.sanitize(item)}</span></li>`).join('');
-                    return `<ul class="LexicalTheme__list"${dirAttr}>${items}</ul>`;
-                }
-                return this.processTextForHtml(answerText, lang);
             }
             _transformInputBoxPart(part) {
                 const answer = {
@@ -2109,7 +1958,7 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
             }
             
             clearAll() {
-                this.setInputText('');
+                document.getElementById('questionInput').value = '';
                 this.questions = []; this.jsonForExport = ''; this.csvData = [];
                 localStorage.removeItem('aiq_autosave_content');
                 localStorage.removeItem('aiq_csv_data');
@@ -2128,55 +1977,13 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
             processTextForHtml(text, language, questionId, partIndex, fieldType, choiceIndex = -1) {
                 if (!text) return '';
                 const direction = language === this.Language.ARABIC ? ' dir="rtl"' : '';
-
+                
                 // FIX: Changed from 5 or more underscores to 4 or more, per user request.
                 let processedText = text.replace(/_{4,}/g, '<span data-node-type="blank-line" data-node-variation="space">&nbsp;</span>');
 
-                // If the text contains a poem block, split into pre/poem/post segments and render exactly as required
-                const poemRegex = /@POEM[\t ]*\n([\s\S]*?)\n@END_POEM/;
-                if (poemRegex.test(processedText)) {
-                    const match = processedText.match(poemRegex);
-                    const preText = processedText.slice(0, match.index).trim();
-                    const poemBody = match[1] || '';
-                    const postText = processedText.slice(match.index + match[0].length).trim();
-
-                    const renderParagraph = (plainText) => {
-                        if (!plainText) return '';
-                        // split into math/plain chunks like below
-                        const chunks = plainText.split(/(``[\s\S]*?``|`[\s\S]*?`|<span data-node-type="blank-line" data-node-variation="gap"> <\/span>|<span data-node-type="blank-line" data-node-variation="space">&nbsp;<\/span>)/);
-                        let html = '';
-                        let mfIndex = 0;
-                        for (const chunk of chunks) {
-                            if (!chunk) continue;
-                            if (chunk.startsWith('``') && chunk.endsWith('``')) {
-                                html += this.createMathField(chunk.slice(2, -2), language, true, questionId, partIndex, fieldType, choiceIndex, mfIndex++);
-                            } else if (chunk.startsWith('`') && chunk.endsWith('`')) {
-                                html += this.createMathField(chunk.slice(1, -1), language, false, questionId, partIndex, fieldType, choiceIndex, mfIndex++);
-                            } else if (chunk.includes('data-node-type="blank-line"')) {
-                                html += chunk;
-                            } else {
-                                let t = chunk;
-                                t = t.replace(/\[U\]([\s\S]+?)\[\/U\]/g, '<u>$1</u>');
-                                t = t.replace(/(^|\n)\s*-\s+/g, `$1§ `);
-                                html += `<span style="white-space: pre-wrap;">${DOMPurify.sanitize(t)}</span>`;
-                            }
-                        }
-                        return `<p class="LexicalTheme__paragraph" style="text-align: justify;"${direction}>${html}</p>`;
-                    };
-
-                    const verses = poemBody
-                        .split(/\n+/)
-                        .map(line => line.trim())
-                        .filter(Boolean)
-                        .map(line => `<p>${DOMPurify.sanitize(line)}</p>`) // each verse becomes a <p>
-                        .join('');
-                    const poemHtml = `<div class="PoemContainer"><article class="Poem vertical-split">${verses}</article></div>`;
-                    return `${renderParagraph(preText)}${poemHtml}${renderParagraph(postText)}`;
-                }
-
-                // Otherwise, render as a single justified paragraph
                 const parts = processedText.split(/(``[\s\S]*?``|`[\s\S]*?`|<span data-node-type="blank-line" data-node-variation="gap"> <\/span>|<span data-node-type="blank-line" data-node-variation="space">&nbsp;<\/span>)/);
                 let finalHtmlContent = "";
+                
                 let mathFieldIndex = 0;
                 for (const part of parts) {
                     if (!part) continue;
@@ -2188,12 +1995,12 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                         finalHtmlContent += part;
                     } else {
                         let textPart = part;
+                        // NEW: Handle underline tag [U]...[/U] before sanitizing
                         textPart = textPart.replace(/\[U\]([\s\S]+?)\[\/U\]/g, '<u>$1</u>');
-                        textPart = textPart.replace(/(^|\n)\s*-\s+/g, `$1§ `);
                         finalHtmlContent += `<span style="white-space: pre-wrap;">${DOMPurify.sanitize(textPart)}</span>`;
                     }
                 }
-                return `<p class="LexicalTheme__paragraph" style="text-align: justify;"${direction}>${finalHtmlContent}</p>`;
+                return `<p class="LexicalTheme__paragraph"${direction}>${finalHtmlContent}</p>`;
             }
             
             createMathField(equation, language, forceEn = false, questionId, partIndex, fieldType, choiceIndex, mathFieldIndex) {
@@ -2480,14 +2287,6 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
             toggleLanguage() {
                 this.language = this.language === this.Language.ARABIC ? this.Language.ENGLISH : this.Language.ARABIC;
                 this.updateInterfaceLanguage();
-                const html = document.documentElement;
-                if (this.language === this.Language.ARABIC) {
-                    html.setAttribute('lang', 'ar');
-                    html.setAttribute('dir', 'rtl');
-                } else {
-                    html.setAttribute('lang', 'en');
-                    html.setAttribute('dir', 'ltr');
-                }
                 this.saveSettings();
             }
             updateInterfaceLanguage() {
@@ -2540,7 +2339,6 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                 this.displayResults();
             }
             openCustomizeModal() {
-                this._lastFocus = document.activeElement;
                 const modal = document.getElementById('customizeModal');
                 modal.style.display = 'flex';
                 document.getElementById('categorySelect').value = this.customization.category;
@@ -2554,7 +2352,7 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                 
                 setTimeout(() => { modal.querySelector('#categorySelect')?.focus(); }, 0);
             }
-            closeCustomizeModal() { document.getElementById('customizeModal').style.display = 'none'; if (this._lastFocus && typeof this._lastFocus.focus === 'function') { this._lastFocus.focus(); } }
+            closeCustomizeModal() { document.getElementById('customizeModal').style.display = 'none'; }
             saveCustomization() {
                 this.customization.category = document.getElementById('categorySelect').value;
                 this.customization.lang = document.getElementById('langSelect').value;
@@ -2629,7 +2427,6 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                 } catch {}
             }
             openCSVModal() {
-                this._lastFocus = document.activeElement;
                 if (typeof Handsontable === 'undefined') { this.showMessage('Error: Table library not loaded.', 'error'); return; }
                 if (this.questions.length === 0) { this.showMessage(this.language === this.Language.ARABIC ? 'الرجاء تحليل الأسئلة أولاً.' : 'Please analyze questions first.', 'warning'); return; }
                 const columns = [
@@ -2659,7 +2456,6 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                     }));
                 }
                 document.getElementById('csvModalBg').style.display = 'flex';
-                setTimeout(() => { document.getElementById('csv-save-btn')?.focus(); }, 0);
                 if (this.hotInstance) this.hotInstance.destroy();
                 this.hotInstance = new Handsontable(document.getElementById('hotTable'), {
                     data: this.csvData,
@@ -2671,7 +2467,6 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
             closeCSVModal() {
                 document.getElementById('csvModalBg').style.display = 'none';
                 if (this.hotInstance) { this.hotInstance.destroy(); this.hotInstance = null; }
-                if (this._lastFocus && typeof this._lastFocus.focus === 'function') { this._lastFocus.focus(); }
             }
             saveCSVData() {
                 if (this.hotInstance) {
@@ -2691,7 +2486,6 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                 }
             }
             openAiTemplateModal() {
-                this._lastFocus = document.activeElement;
                 if (typeof Handsontable === 'undefined') { this.showMessage('Error: Table library not loaded.', 'error'); return; }
                 if (this.questions.length === 0) { this.showMessage(this.language === this.Language.ARABIC ? 'الرجاء تحليل الأسئلة أولاً.' : 'Please analyze questions first.', 'warning'); return; }
                 
@@ -2706,7 +2500,6 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                 }));
 
                 document.getElementById('aiTemplateModalBg').style.display = 'flex';
-                setTimeout(() => { document.getElementById('ai-template-save-btn')?.focus(); }, 0);
                 if (this.aiTemplateHotInstance) this.aiTemplateHotInstance.destroy();
                 
                 this.aiTemplateHotInstance = new Handsontable(document.getElementById('hotAiTemplateTable'), {
@@ -2727,7 +2520,6 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                     this.aiTemplateHotInstance.destroy();
                     this.aiTemplateHotInstance = null;
                 }
-                if (this._lastFocus && typeof this._lastFocus.focus === 'function') { this._lastFocus.focus(); }
             }
             saveAiTemplateData() {
                 if (this.aiTemplateHotInstance) {
@@ -2795,21 +2587,18 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
             
             // Subject Template ID Functions
             openSubjectTemplateModal() {
-                this._lastFocus = document.activeElement;
                 if (this.questions.length === 0) {
                     this.showMessage(this.language === this.Language.ARABIC ? 'الرجاء تحليل الأسئلة أولاً.' : 'Please analyze questions first.', 'warning');
                     return;
                 }
                 
                 document.getElementById('subjectTemplateModalBg').style.display = 'flex';
-                setTimeout(() => { document.getElementById('subjectSelect')?.focus(); }, 0);
                 document.getElementById('subjectSelect').value = '';
                 this.updateSubjectQuestionsPreview();
             }
             
             closeSubjectTemplateModal() {
                 document.getElementById('subjectTemplateModalBg').style.display = 'none';
-                if (this._lastFocus && typeof this._lastFocus.focus === 'function') { this._lastFocus.focus(); }
             }
             
             updateSubjectQuestionsPreview() {
@@ -2911,41 +2700,22 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
             // --- TAGS MODAL ---
             populateTagsModal() {
                 const templates = [
-                    { name: 'MCQ', hint: 'اختيار من متعدد (نجمة واحدة للإجابة الصحيحة)', content: 'type: mcq\n@STEM\nاكتب نص السؤال هنا\n\n@CHOICES\n* الاختيار الصحيح\n- اختيار خاطئ\n- اختيار خاطئ\n- اختيار خاطئ\n---\n' },
-                    { name: 'MRQ', hint: 'اختيارات متعددة صحيحة (أكثر من نجمة)', content: 'type: mrq\n@STEM\nاكتب نص السؤال هنا\n\n@CHOICES\n* اختيار صحيح\n* اختيار صحيح\n- اختيار خاطئ\n- اختيار خاطئ\n---\n' },
-                    { name: 'OQ (ترتيب)', hint: 'ترتيب عناصر بدون نجوم (سيتم اعتبارها ترتيبًا)', content: 'type: oq\n@STEM\nرتّب العناصر التالية\n\n@CHOICES\n- العنصر الأول\n- العنصر الثاني\n- العنصر الثالث\n- العنصر الرابع\n---\n' },
-                    { name: 'Matching', hint: 'توصيل أزواج العناصر باستخدام |', content: 'type: matching\n@STEM\n\n@MATCHING_PAIRS\nالنص 1 | النظير 1\nالنص 2 | النظير 2\nالنص 3 | النظير 3\n---\n' },
-                    { name: 'Gap Text', hint: 'ملء فراغات: اكتب الجمل وضع الفراغات واملأ @GAPS', content: 'type: gapText\n@STEM\nاكتب النص مع [فراغ] هنا\n@BLANK\n@GAPS\nالإجابة 1\nالإجابة 2\n---\n' },
-                    { name: 'String', hint: 'نص قصير كإجابة', content: 'type: string\n@STEM\nاكتب نص السؤال هنا\n\n@ANSWER\nالإجابة القصيرة هنا\n---\n' },
-                    { name: 'FRQ', hint: 'إجابة طويلة (مقالي)', content: 'type: frq\n@STEM\nاكتب نص السؤال هنا\n\n@ANSWER\nاكتب الإجابة النموذجية هنا\n---\n' },
-                    { name: 'FRQ (AI)', hint: 'إجابة مقالية يتم تقييمها بالذكاء الاصطناعي', content: 'type: frq_ai\n@STEM\nاكتب نص السؤال هنا\n\n@ANSWER\nإجابة نموذجية مختصرة\n---\n' },
-                    { name: 'Input Box', hint: 'قيمة + وحدة مفصولة بـ |', content: 'type: input_box\n@STEM\nاكتب نص السؤال هنا\n\n@ANSWER\n12 | cm\n---\n' },
-                    { name: 'Multi-Part', hint: 'سؤال متعدد الأجزاء باستخدام @STATEMENT و @PART', content: '@STATEMENT\nمقدمة السؤال العامة\n@PART\ntype: mcq\n@STEM\nنص الجزء الأول\n@CHOICES\n* صحيح\n- خطأ\n@PART\ntype: string\n@STEM\nنص الجزء الثاني\n@ANSWER\nالإجابة هنا\n---\n' },
-                    { name: 'Poem', hint: 'قالب شعر: ضع الأبيات بين @POEM و @END_POEM', content: 'type: string\n@STEM\n@POEM\nرَمَوني بعُقمٍ في الشباب وليتني\nعقِمتُ فلم أجْزعْ لقولِ عِداتي\nأنا البحر في أحشائه الدرُّ كامنٌ\nفهل ساءَلوا الغوَّاصَ عن صَدَفاتي؟\n@END_POEM\n\n@ANSWER\n...\n---\n' }
+                    { name: 'MCQ', hint: 'إدراج قالب سؤال اختيار من متعدد', content: 'type: mcq\n@STEM\n\n@CHOICES\n* \n- \n- \n- \n---\n' },
+                    { name: 'Matching', hint: 'إدراج قالب سؤال توصيل', content: 'type: matching\n@STEM\n\n@MATCHING_PAIRS\n | \n | \n---\n' },
+                    { name: 'Gap Text', hint: 'إدراج قالب سؤال ملء فراغات', content: 'type: gapText\n@STEM\n@BLANK\n@GAPS\n\n---\n' },
                 ];
 
                 const tags = [
                     { tag: '@STEM', hint: 'نص السؤال الرئيسي' },
-                    { tag: '@CHOICES', hint: 'قائمة الاختيارات (عنصر في كل سطر)' },
-                    { tag: '@ANSWER', hint: 'الإجابة (String/FRQ/FRQ_AI/Input Box)' },
+                    { tag: '@CHOICES', hint: 'قائمة الاختيارات' },
+                    { tag: '@ANSWER', hint: 'الإجابة الصحيحة (لأسئلة String, FRQ)' },
                     { tag: '@GAPS', hint: 'إجابات ملء الفراغات (كل إجابة في سطر)' },
                     { tag: '@MATCHING_PAIRS', hint: 'أزواج المطابقة (افصل بينها بـ |)' },
-                    { tag: '@BLANK', hint: 'وضع فراغ داخل نص الجملة' },
-                    { tag: '@POEM', hint: 'بداية مقطع شعر (أبيات في أسطر منفصلة)؛ أختم بـ @END_POEM' },
-                    { tag: '@END_POEM', hint: 'نهاية مقطع الشعر' },
-                    { tag: '@STATEMENT', hint: 'مقدمة تسبق الأجزاء' },
-                    { tag: '@PART', hint: 'جزء جديد داخل السؤال' },
-                    { tag: 'type: mcq', hint: 'تحديد نوع الجزء: MCQ' },
-                    { tag: 'type: mrq', hint: 'تحديد نوع الجزء: MRQ' },
-                    { tag: 'type: oq', hint: 'تحديد نوع الجزء: OQ (ترتيب)' },
-                    { tag: 'type: matching', hint: 'تحديد نوع الجزء: Matching' },
-                    { tag: 'type: gapText', hint: 'تحديد نوع الجزء: Gap Text' },
-                    { tag: 'type: string', hint: 'تحديد نوع الجزء: String' },
-                    { tag: 'type: frq', hint: 'تحديد نوع الجزء: FRQ' },
-                    { tag: 'type: frq_ai', hint: 'تحديد نوع الجزء: FRQ (AI)' },
-                    { tag: 'type: input_box', hint: 'تحديد نوع الجزء: Input Box' },
-                    { tag: '[U]', hint: 'وضع خط تحت النص: [U]النص[/U]' },
-                    { tag: '---', hint: 'خط فاصل بين الأسئلة' }
+                    { tag: '@BLANK', hint: 'فجوة أو مسافة فارغة داخل النص' },
+                    { tag: '@STATEMENT', hint: 'النص الاستهلالي الذي يسبق أجزاء السؤال' },
+                    { tag: '@PART', hint: 'لتقسيم السؤال إلى أجزاء متعددة' },
+                    { tag: '[U]', hint: 'لوضع خط تحت النص، استخدمه هكذا: [U]النص[/U]' },
+                    { tag: '---', hint: 'خط فاصل بين الأسئلة' },
                 ];
                 
                 const templatesContainer = document.querySelector('#templates-section .tags-grid');
@@ -2994,15 +2764,7 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
             toggleTagsModal(show) {
                 const modal = document.getElementById('tagsModal');
                 const isVisible = modal.style.display === 'block';
-                const shouldShow = typeof show === 'boolean' ? show : !isVisible;
-                if (shouldShow) {
-                    this._lastFocus = document.activeElement;
-                    modal.style.display = 'block';
-                    setTimeout(() => { document.getElementById('tags-modal-close-btn')?.focus(); }, 0);
-                } else {
-                    modal.style.display = 'none';
-                    if (this._lastFocus && typeof this._lastFocus.focus === 'function') { this._lastFocus.focus(); }
-                }
+                modal.style.display = typeof show === 'boolean' ? (show ? 'block' : 'none') : (isVisible ? 'none' : 'block');
             }
 
             makeModalDraggable() {
@@ -3055,7 +2817,7 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
             }
 
             runLiveValidation() {
-                const text = this.getInputText();
+                const text = document.getElementById('questionInput').value;
                 const blocks = text.trim().split(/\n---\n/);
                 
                 this.questions = blocks.filter(block => block.trim()).map((block, index) => {
@@ -3084,7 +2846,7 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
             }
 
             autoSaveContent() {
-                const content = this.getInputText();
+                const content = document.getElementById('questionInput').value;
                 localStorage.setItem('aiq_autosave_content', content);
                 this.logger.info('Content auto-saved.');
             }
@@ -3092,7 +2854,7 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
             loadAutoSavedContent() {
                 const savedContent = localStorage.getItem('aiq_autosave_content');
                 if (savedContent) {
-                    this.setInputText(savedContent);
+                    document.getElementById('questionInput').value = savedContent;
                     this.showMessage('تم استعادة المحتوى المحفوظ تلقائيًا.', 'success');
                     this.runLiveValidation();
                 }
@@ -3155,7 +2917,7 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                 const fullText = this.questions.map(q => {
                     return (q._metaHeader + q._contentBlock).trim();
                 }).join('\n---\n');
-                this.setInputText(fullText);
+                document.getElementById('questionInput').value = fullText;
                 this.autoSaveContent(); // Save changes after programmatic update
             }
             
@@ -3247,9 +3009,7 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
             }
 
             openGenerationModal() {
-                this._lastFocus = document.activeElement;
                 document.getElementById('generationModalBg').style.display = 'flex';
-                setTimeout(() => { document.getElementById('gen-text-input')?.focus(); }, 0);
             }
 
             closeGenerationModal() {
@@ -3260,7 +3020,6 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                 document.getElementById('gen-image-preview').style.display = 'none';
                 document.getElementById('gen-image-preview').src = '';
                 this.uploadedImageBase64 = null;
-                if (this._lastFocus && typeof this._lastFocus.focus === 'function') { this._lastFocus.focus(); }
             }
 
             setupImageDropZone() {
