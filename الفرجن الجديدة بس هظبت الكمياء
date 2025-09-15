@@ -319,11 +319,20 @@
         }
         /* Monaco container */
         #monacoEditor {
-            display: none; /* will be shown after Monaco loads */
+            display: block; /* show container immediately; Monaco attaches when ready */
             height: 320px;
             border: 2px solid #e5e7eb;
             border-radius: 12px;
             overflow: hidden;
+            background: #fff;
+        }
+        #fallbackEditor {
+            display: none;
+            height: 320px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 16px;
+            white-space: pre-wrap;
             background: #fff;
         }
     </style>
@@ -344,11 +353,7 @@
                 <h3 id="panel-title-2" style="margin-top: 20px;"><span style="font-size: 1.5em; line-height: 1;">②</span> أدخل النص</h3>
                 <div class="input-section">
                     <div id="monacoEditor" aria-label="Advanced Editor"></div>
-                    <textarea id="questionInput" placeholder="أدخل محتوى السؤال هنا...
-سيتم تجاهل أي بيانات وصفية مثل id أو language (ما عدا type الذي سيضاف تلقائيًا).
-استخدم الوسوم مثل @STEM و @CHOICES لتحديد أجزاء السؤال.
-افصل بين كل سؤال بـ ---
-"></textarea>
+                    <div id="fallbackEditor" contenteditable="true" aria-label="Fallback Editor"></div>
                 </div>
                 <div class="api-key-section">
                     <select id="aiProviderSelect">
@@ -607,11 +612,10 @@
                 inlineMath: [['$', '$'], ['\\(', '\\)']],
                 displayMath: [['$$', '$$'], ['\\[', '\\]']],
                 packages: { '[+]': ['mhchem', 'physics', 'siunitx'] }
-            },
-            loader: { load: ['[tex]/mhchem', '[tex]/physics', '[tex]/siunitx'] }
+            }
         };
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" id="MathJax-script"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" id="MathJax-script"></script>
     <script>
     document.addEventListener('DOMContentLoaded', () => {
         class AIQuestionConverter {
@@ -982,15 +986,17 @@
                 }
             }
             initializeMonacoEditor() {
-                const textarea = document.getElementById('questionInput');
                 const monacoContainer = document.getElementById('monacoEditor');
-                if (!textarea || !monacoContainer || typeof window.require === 'undefined') return;
+                const fallbackDiv = document.getElementById('fallbackEditor');
+                if (!monacoContainer || typeof window.require === 'undefined') {
+                    if (fallbackDiv) fallbackDiv.style.display = 'block';
+                    return;
+                }
                 try {
                     window.require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.49.0/min/vs' } });
                     window.require(['vs/editor/editor.main'], () => {
                         monacoContainer.style.display = 'block';
-                        textarea.style.display = 'none';
-                        const initialValue = textarea.value || '';
+                        const initialValue = '';
                         const isRTL = this.language === this.Language.ARABIC;
                         this.monacoEditor = monaco.editor.create(monacoContainer, {
                             value: initialValue,
@@ -1005,12 +1011,13 @@
                         });
                         this.monacoEditor.onDidChangeModelContent(() => {
                             const val = this.monacoEditor.getValue();
-                            textarea.value = val;
                             clearTimeout(this.autoSaveTimeout);
                             this.autoSaveTimeout = setTimeout(() => this.autoSaveContent(), 1000);
                             clearTimeout(this.validationTimeout);
                             this.validationTimeout = setTimeout(() => this.runLiveValidation(), 500);
                         });
+                        // Hide fallback if it was visible
+                        if (fallbackDiv) fallbackDiv.style.display = 'none';
                     });
                 } catch (_) {}
             }
@@ -1026,7 +1033,7 @@
                         return div.textContent || '';
                     }
                 } catch (_) {}
-                return document.getElementById('questionInput').value || '';
+                return '';
             }
             setInputText(text) {
                 const safe = typeof text === 'string' ? text : '';
@@ -1039,8 +1046,7 @@
                         this.richEditor.setData(safe.replace(/\n/g, '<br>'));
                     }
                 } catch (_) {}
-                const el = document.getElementById('questionInput');
-                if (el) el.value = safe;
+                // no textarea fallback anymore
             }
             initializeRichEditor() {
                 const textarea = document.getElementById('questionInput');
@@ -1151,13 +1157,7 @@
                 this.setupImageDropZone();
 
                 // Auto-Save and Live Validation Event
-                document.getElementById('questionInput').addEventListener('input', () => {
-                    clearTimeout(this.autoSaveTimeout);
-                    this.autoSaveTimeout = setTimeout(() => this.autoSaveContent(), 1000);
-                    
-                    clearTimeout(this.validationTimeout);
-                    this.validationTimeout = setTimeout(() => this.runLiveValidation(), 500);
-                });
+                // Input changes are handled from Monaco's change listener
 
                 // AI Template ID Modal Events
                 document.getElementById('ai-template-modal-close-btn').addEventListener('click', () => this.closeAiTemplateModal());
@@ -1574,8 +1574,7 @@ ${rawText}
             
             async smartAnalyze() {
                 this.logger.info("Starting smart analysis...");
-                const inputEl = document.getElementById('questionInput');
-                const rawText = inputEl.value;
+                const rawText = this.getInputText();
                 if (!rawText.trim()) {
                     this.showMessage(this.language === this.Language.ARABIC ? 'الرجاء إدخال نص للتحليل' : 'Please enter text to analyze', 'warning');
                     return;
@@ -3052,15 +3051,21 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
             }
 
             insertTag(tag) {
-                const textarea = document.getElementById('questionInput');
-                const start = textarea.selectionStart;
-                const end = textarea.selectionEnd;
-                const text = textarea.value;
-                const before = text.substring(0, start);
-                const after = text.substring(end, text.length);
-                textarea.value = before + tag + after;
-                textarea.selectionStart = textarea.selectionEnd = start + tag.length;
-                textarea.focus();
+                const val = this.getInputText();
+                if (this.monacoEditor) {
+                    const model = this.monacoEditor.getModel();
+                    const sel = this.monacoEditor.getSelection();
+                    this.monacoEditor.executeEdits('insertTag', [{
+                        range: sel,
+                        text: tag,
+                        forceMoveMarkers: true
+                    }]);
+                    const newPos = model.modifyPosition(sel.getStartPosition(), tag.length);
+                    this.monacoEditor.setPosition(newPos);
+                    this.monacoEditor.focus();
+                    return;
+                }
+                this.setInputText((val || '') + tag);
             }
 
             toggleTagsModal(show) {
@@ -3105,8 +3110,7 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
 
             // --- NEW FEATURES ---
             cleanAndFormat() {
-                const textarea = document.getElementById('questionInput');
-                let text = textarea.value;
+                let text = this.getInputText();
                 
                 // This is a very basic formatter and might not work for all cases.
                 // It looks for a line of text followed by a numbered/lettered list.
@@ -3121,7 +3125,7 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                     return `type: mcq\n@STEM\n${stem.trim()}\n@CHOICES\n${choiceLines}\n---`;
                 });
 
-                textarea.value = formattedText;
+                this.setInputText(formattedText);
                 this.showMessage('تمت محاولة تنظيف وتنسيق النص.', 'success');
                 this.runLiveValidation();
             }
@@ -3437,9 +3441,9 @@ Strictly follow this formatting for each question:
                     const aiResponse = await this._callAI(prompt, apiKey, this.uploadedImageBase64);
                     const formattedQuestions = this.postProcessAIFormatted(aiResponse);
 
-                    const mainTextarea = document.getElementById('questionInput');
-                    const separator = mainTextarea.value.trim() ? '\n---\n' : '';
-                    mainTextarea.value += separator + formattedQuestions;
+                    const current = this.getInputText();
+                    const separator = current.trim() ? '\n---\n' : '';
+                    this.setInputText(current + separator + formattedQuestions);
 
                     this.closeGenerationModal();
                     this.showMessage(this.language === this.Language.ARABIC ? 'تم توليد الأسئلة بنجاح!' : 'Questions generated successfully!', 'success');
