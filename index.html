@@ -2052,9 +2052,10 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                     answer: [part.answer]
                 };
                 ai: { "ai_template_id": string_ai_template_id }
-                return result;
-            }
-            _transformFRQPart(part, lang) {
+   };
+    
+    return result;
+}            _transformFRQPart(part, lang) {
                 return { choices: [], answer: this._formatAnswerHtml(part.answer, lang) };
             }
             _transformFRQ_AIPart(part, globalMetadata, lang) {
