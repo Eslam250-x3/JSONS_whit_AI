@@ -2046,14 +2046,12 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                 };
             }
             _transformStringPart(part, globalMetadata, lang) {
+                const string_ai_template_id = 593158513739;
                 const result = {
                     choices: null,
-                    answer: [this.processTextForHtml(part.answer, lang)]
+                    answer: [part.answer]
                 };
-                const aiTemplateId = part.metadata.ai_template_id || globalMetadata.ai_template_id;
-                if (aiTemplateId) {
-                    result.ai = { "ai_template_id": Number(aiTemplateId) };
-                }
+                ai: { "ai_template_id": string_ai_template_id }
                 return result;
             }
             _transformFRQPart(part, lang) {
