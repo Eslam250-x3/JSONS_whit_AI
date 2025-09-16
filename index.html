@@ -2045,17 +2045,22 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                     choices: []
                 };
             }
-             _transformStringPart(part, globalMetadata, lang) {
-                const string_ai_template_id = 593158513739;
-                const result = {
-                    choices: null,
-                    answer: [part.answer]
-                };
-                ai: { "ai_template_id": string_ai_template_id }
-   };
+            _transformStringPart(part, globalMetadata, lang) {
+    const string_ai_template_id = 593158513739;
+
+    const result = {
+        choices: null,
+        answer: [part.answer],
+        ai: { "ai_template_id": string_ai_template_id } // Correctly assign the 'ai' property here
+    };
     
     return result;
-}            _transformFRQPart(part, lang) {
+}
+
+
+
+            
+        _transformFRQPart(part, lang) {
                 return { choices: [], answer: this._formatAnswerHtml(part.answer, lang) };
             }
             _transformFRQ_AIPart(part, globalMetadata, lang) {
