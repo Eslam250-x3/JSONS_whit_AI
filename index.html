@@ -1330,6 +1330,18 @@ type: string
 \`\`
 @ANSWER
 x=3, y=2
+---
+مثال String مع AI Guidelines:
+type: string
+ai_template_id: 593158513739
+@STEM
+اذكر عاصمة فرنسا
+@ANSWER
+باريس
+@GUIDELINES
+باريز - 1 - كتابة قريبة من الصحيحة
+Paris - 0 - الإجابة باللغة الإنجليزية
+---
 `;
                 let typeInstruction = '1.  **حدد نوع** كل سؤال بناءً على محتواه.'; // دي الجملة الافتراضية
 if (forcedType && forcedType !== 'unknown') {
@@ -1345,9 +1357,10 @@ if (forcedType && forcedType !== 'unknown') {
 ${typeInstruction}
 
 2.  **أخرج كل سؤال بالتنسيق التالي دون أي تغيير في المحتوى:**
-    -   سطر بيانات وصفية في الأعلى، مثال: \`type: mcq\`
+    -   سطر بيانات وصفية في الأعلى، مثال: \`type: mcq\` أو \`ai_template_id: 593158513739\`
     -   وسم \`@STEM\` لنص السؤال الرئيسي.
-    -   وسوم المحتوى حسب نوع السؤال (\`@CHOICES\`, \`@MATCHING_PAIRS\`, \`@GAPS\`, \`@ANSWER\`).
+    -   وسوم المحتوى حسب نوع السؤال (\`@CHOICES\`, \`@MATCHING_PAIRS\`, \`@GAPS\`, \`@ANSWER\`, \`@GUIDELINES\`).
+    -   **مهم جداً:** إذا وجدت وسم \`@GUIDELINES\` في النص الأصلي، يجب الحفاظ عليه تماماً كما هو دون أي تغيير.
     -   استخدم \`---\` للفصل بين كل سؤال وآخر.
 
 **قواعد أنواع الأسئلة (مهم):**
@@ -1356,6 +1369,7 @@ ${typeInstruction}
 -   **Matching:** يجب أن تكون الأزواج في \`@MATCHING_PAIRS\` مفصولة بـ \`|\`.
 -   **GapText:** استخدم \`@BLANK\` في نص السؤال لكل فجوة، وضع الإجابات بالترتيب في \`@GAPS\`.
 -   **Input Box:** يجب أن تكون الإجابة في \`@ANSWER\` بصيغة \`القيمة | الوحدة\` أو \`القيمة\` فقط إذا لم تكن هناك وحدة.
+-   **String مع AI Guidelines:** إذا كان السؤال من نوع string ويحتوي على \`@GUIDELINES\`، فيجب الحفاظ على وسم \`@GUIDELINES\` وكل محتواه. كل سطر في @GUIDELINES يجب أن يكون بالصيغة: \`إجابة الطالب - الدرجة - التعليق\` حيث الدرجة إما 0 أو 1.
 
 **قواعد الرياضيات (مهمة للغاية ويجب اتباعها بدقة):**
 -   **لا تقم أبدًا بتعديل** محتوى أو صيغة أي كود LaTeX.
@@ -1381,9 +1395,10 @@ You are an expert question formatter and a meticulous academic assistant. Your t
 1.  **Detect** every question in the text.
 2.  **Auto-detect** the type for each question from: mcq, mrq, oq, gapText, matching, string, frq, frq_ai, input_box.
 3.  **Format each question as follows:**
-    -   A metadata line at the top, e.g., \`type: mcq\`
+    -   A metadata line at the top, e.g., \`type: mcq\` or \`ai_template_id: 593158513739\`
     -   A \`@STEM\` tag for the main question text.
-    -   Content tags based on the question type (\`@CHOICES\`, \`@MATCHING_PAIRS\`, \`@GAPS\`, \`@ANSWER\`).
+    -   Content tags based on the question type (\`@CHOICES\`, \`@MATCHING_PAIRS\`, \`@GAPS\`, \`@ANSWER\`, \`@GUIDELINES\`).
+    -   **Very Important:** If you find a \`@GUIDELINES\` tag in the original text, you MUST preserve it exactly as is without any modification.
     -   Use \`---\` to separate each question.
 
 **Question Type Rules (Important):**
@@ -1392,6 +1407,7 @@ You are an expert question formatter and a meticulous academic assistant. Your t
 -   **Matching:** Pairs under \`@MATCHING_PAIRS\` must be separated by \`|\`.
 -   **GapText:** Use \`@BLANK\` in the stem for each gap, and place the ordered answers under \`@GAPS\`.
 -   **Input Box:** The answer under \`@ANSWER\` should be in the format \`value | unit\` or just \`value\` if there is no unit.
+-   **String with AI Guidelines:** If the question is of type string and contains \`@GUIDELINES\`, you MUST preserve the \`@GUIDELINES\` tag and all its content. Each line in @GUIDELINES should follow the format: \`student answer - mark - comment\` where mark is either 0 or 1.
 
 **Mathematics Rules (Crucial and must be followed precisely):**
 -   **Never modify** the content or syntax of any LaTeX code.
@@ -1898,26 +1914,278 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                     this.showMessage(this.language === this.Language.ARABIC ? 'لا توجد أسئلة لتحويلها.' : 'No questions to convert.', 'warning');
                     return;
                 }
-                // Validation check for empty choices and required AI template IDs
+                
+                // Comprehensive validation check - must be 100% valid before allowing JSON export
+                // First, get valid question types
+                const validTypes = Object.values(this.QuestionType).filter(t => t !== this.QuestionType.UNKNOWN);
+                
+                // 🆕 Check for duplicate IDs across all questions
+                const questionIds = this.questions.map(q => q.metadata.id);
+                const duplicateIds = questionIds.filter((id, index) => questionIds.indexOf(id) !== index);
+                if (duplicateIds.length > 0) {
+                    const errorMsg = `Duplicate question IDs found: ${duplicateIds.join(', ')}`;
+                    const errorMsgAr = `تم العثور على معرفات أسئلة مكررة: ${duplicateIds.join(', ')}`;
+                    this.showMessage(this.language === this.Language.ARABIC ? errorMsgAr : errorMsg, 'error');
+                    return;
+                }
+                
                 for (let i = 0; i < this.questions.length; i++) {
                     const q = this.questions[i];
+                    
+                    // 🆕 Check ID format (should be 12 digits if not temporary)
+                    const id = q.metadata.id;
+                    if (id && !id.toString().startsWith('temp_')) {
+                        const idStr = id.toString();
+                        if (!/^\d{12}$/.test(idStr)) {
+                            const errorMsg = `Question ${i + 1}: Invalid ID format "${id}". ID must be exactly 12 digits.`;
+                            const errorMsgAr = `السؤال ${i + 1}: صيغة المعرف "${id}" غير صحيحة. المعرف يجب أن يكون 12 رقم بالضبط.`;
+                            this.showMessage(this.language === this.Language.ARABIC ? errorMsgAr : errorMsg, 'error');
+                            return;
+                        }
+                    }
+                    
+                    // Check for validation warnings
+                    if (q.validationWarning) {
+                        const errorMsg = `Question ${i + 1}: ${q.validationWarning}`;
+                        const errorMsgAr = `السؤال ${i + 1}: ${q.validationWarning}`;
+                        this.showMessage(this.language === this.Language.ARABIC ? errorMsgAr : errorMsg, 'error');
+                        return;
+                    }
+                    
+                    // Check each part
                     for (let j = 0; j < q.parts.length; j++) {
                         const p = q.parts[j];
+                        
+                        // Check if type is valid
+                        if (!p.type || p.type === this.QuestionType.UNKNOWN || !validTypes.includes(p.type)) {
+                            const validTypesStr = validTypes.join(', ');
+                            const errorMsg = `Question ${i + 1}, Part ${j + 1}: Invalid question type "${p.type}". Valid types are: ${validTypesStr}`;
+                            const errorMsgAr = `السؤال ${i + 1}, الجزء ${j + 1}: نوع السؤال "${p.type}" غير صحيح. الأنواع الصحيحة هي: ${validTypesStr}`;
+                            this.showMessage(this.language === this.Language.ARABIC ? errorMsgAr : errorMsg, 'error');
+                            return;
+                        }
+                        
+                        // Check that stem exists
+                        if (!p.stem || p.stem.trim() === '') {
+                            const errorMsg = `Question ${i + 1}, Part ${j + 1}: Missing question stem/text.`;
+                            const errorMsgAr = `السؤال ${i + 1}, الجزء ${j + 1}: نص السؤال مفقود.`;
+                            this.showMessage(this.language === this.Language.ARABIC ? errorMsgAr : errorMsg, 'error');
+                            return;
+                        }
+                        
+                        // Check choices for types that need them
                         const needsChoices = [this.QuestionType.OQ, this.QuestionType.MCQ, this.QuestionType.MRQ].includes(p.type);
                         if (needsChoices && (!p.choices || p.choices.length === 0)) {
-                            const errorMsg = `Question ${i + 1}, Part ${j + 1} (${p.type}) must have choices.`;
-                            const errorMsgAr = `السؤال ${i + 1}, الجزء ${j + 1} (من نوع ${p.type}) يجب أن يحتوي على اختيارات.`;
+                            const errorMsg = `Question ${i + 1}, Part ${j + 1} (${p.type}): Must have choices.`;
+                            const errorMsgAr = `السؤال ${i + 1}, الجزء ${j + 1} (${p.type}): يجب أن يحتوي على اختيارات.`;
                             this.showMessage(this.language === this.Language.ARABIC ? errorMsgAr : errorMsg, 'error');
-                            return; // Stop the conversion
+                            return;
                         }
+                        
+                        // 🆕 Check minimum number of choices (at least 2)
+                        if (needsChoices && p.choices && p.choices.length < 2) {
+                            const errorMsg = `Question ${i + 1}, Part ${j + 1} (${p.type}): Must have at least 2 choices.`;
+                            const errorMsgAr = `السؤال ${i + 1}, الجزء ${j + 1} (${p.type}): يجب أن يحتوي على اختيارين على الأقل.`;
+                            this.showMessage(this.language === this.Language.ARABIC ? errorMsgAr : errorMsg, 'error');
+                            return;
+                        }
+                        
+                        // 🆕 Check for empty choices
+                        if (needsChoices && p.choices) {
+                            const emptyChoices = p.choices.filter(c => !c || c.trim() === '');
+                            if (emptyChoices.length > 0) {
+                                const errorMsg = `Question ${i + 1}, Part ${j + 1} (${p.type}): Contains empty choices.`;
+                                const errorMsgAr = `السؤال ${i + 1}, الجزء ${j + 1} (${p.type}): يحتوي على اختيارات فارغة.`;
+                                this.showMessage(this.language === this.Language.ARABIC ? errorMsgAr : errorMsg, 'error');
+                                return;
+                            }
+                        }
+                        
+                        // 🆕 Check for duplicate choices (exact match)
+                        if (needsChoices && p.choices) {
+                            const trimmedChoices = p.choices.map(c => c.trim().toLowerCase());
+                            const duplicates = trimmedChoices.filter((item, index) => trimmedChoices.indexOf(item) !== index);
+                            if (duplicates.length > 0) {
+                                const errorMsg = `Question ${i + 1}, Part ${j + 1} (${p.type}): Contains duplicate choices.`;
+                                const errorMsgAr = `السؤال ${i + 1}, الجزء ${j + 1} (${p.type}): يحتوي على اختيارات متطابقة.`;
+                                this.showMessage(this.language === this.Language.ARABIC ? errorMsgAr : errorMsg, 'error');
+                                return;
+                            }
+                        }
+                        
+                        // Check MCQ has exactly one answer selected
+                        if (p.type === this.QuestionType.MCQ) {
+                            if (p.answer === undefined || p.answer === null) {
+                                const errorMsg = `Question ${i + 1}, Part ${j + 1} (MCQ): No correct answer selected.`;
+                                const errorMsgAr = `السؤال ${i + 1}, الجزء ${j + 1} (اختيار من متعدد): لم يتم تحديد إجابة صحيحة (*).`;
+                                this.showMessage(this.language === this.Language.ARABIC ? errorMsgAr : errorMsg, 'error');
+                                return;
+                            }
+                            
+                            // 🆕 Check that answer index is within choices range
+                            if (p.answer < 0 || p.answer >= p.choices.length) {
+                                const errorMsg = `Question ${i + 1}, Part ${j + 1} (MCQ): Answer index ${p.answer} is out of range (0-${p.choices.length - 1}).`;
+                                const errorMsgAr = `السؤال ${i + 1}, الجزء ${j + 1} (اختيار من متعدد): رقم الإجابة ${p.answer} خارج النطاق المسموح.`;
+                                this.showMessage(this.language === this.Language.ARABIC ? errorMsgAr : errorMsg, 'error');
+                                return;
+                            }
+                        }
+                        
+                        // Check MRQ has at least one answer
+                        if (p.type === this.QuestionType.MRQ) {
+                            if (!Array.isArray(p.answer) || p.answer.length === 0) {
+                                const errorMsg = `Question ${i + 1}, Part ${j + 1} (MRQ): Must have at least one correct answer.`;
+                                const errorMsgAr = `السؤال ${i + 1}, الجزء ${j + 1} (اختيارات متعددة): يجب أن يحتوي على إجابة صحيحة واحدة على الأقل (*).`;
+                                this.showMessage(this.language === this.Language.ARABIC ? errorMsgAr : errorMsg, 'error');
+                                return;
+                            }
+                            
+                            // 🆕 Check that MRQ has more than one correct answer (otherwise should be MCQ)
+                            if (p.answer.length === 1) {
+                                const errorMsg = `Question ${i + 1}, Part ${j + 1} (MRQ): Has only one correct answer. Consider using MCQ instead.`;
+                                const errorMsgAr = `السؤال ${i + 1}, الجزء ${j + 1} (اختيارات متعددة): يحتوي على إجابة صحيحة واحدة فقط. يفضل استخدام MCQ بدلاً منه.`;
+                                this.showMessage(this.language === this.Language.ARABIC ? errorMsgAr : errorMsg, 'error');
+                                return;
+                            }
+                            
+                            // 🆕 Check that all answer indices are within choices range
+                            const invalidIndices = p.answer.filter(idx => idx < 0 || idx >= p.choices.length);
+                            if (invalidIndices.length > 0) {
+                                const errorMsg = `Question ${i + 1}, Part ${j + 1} (MRQ): Some answer indices are out of range.`;
+                                const errorMsgAr = `السؤال ${i + 1}, الجزء ${j + 1} (اختيارات متعددة): بعض أرقام الإجابات خارج النطاق المسموح.`;
+                                this.showMessage(this.language === this.Language.ARABIC ? errorMsgAr : errorMsg, 'error');
+                                return;
+                            }
+                        }
+                        
+                        // 🆕 Check OQ (Ordering Questions) - all choices should have no stars
+                        if (p.type === this.QuestionType.OQ) {
+                            if (!p.choices || p.choices.length < 2) {
+                                const errorMsg = `Question ${i + 1}, Part ${j + 1} (OQ): Must have at least 2 items to order.`;
+                                const errorMsgAr = `السؤال ${i + 1}, الجزء ${j + 1} (ترتيب): يجب أن يحتوي على عنصرين على الأقل للترتيب.`;
+                                this.showMessage(this.language === this.Language.ARABIC ? errorMsgAr : errorMsg, 'error');
+                                return;
+                            }
+                        }
+                        
+                        // Check STRING has answer
+                        if (p.type === this.QuestionType.STRING) {
+                            if (!p.answer || p.answer.trim() === '') {
+                                const errorMsg = `Question ${i + 1}, Part ${j + 1} (STRING): Missing answer.`;
+                                const errorMsgAr = `السؤال ${i + 1}, الجزء ${j + 1} (نص قصير): الإجابة مفقودة.`;
+                                this.showMessage(this.language === this.Language.ARABIC ? errorMsgAr : errorMsg, 'error');
+                                return;
+                            }
+                            
+                            // Check guidelines if they exist
+                            if (p.guidelines && Array.isArray(p.guidelines)) {
+                                const invalidGuidelines = p.guidelines.filter(g => 
+                                    !g.student_answer || g.mark === undefined || !g.comment
+                                );
+                                if (invalidGuidelines.length > 0) {
+                                    const errorMsg = `Question ${i + 1}, Part ${j + 1} (STRING): Invalid guidelines format.`;
+                                    const errorMsgAr = `السؤال ${i + 1}, الجزء ${j + 1} (نص قصير): صيغة الإرشادات غير صحيحة.`;
+                                    this.showMessage(this.language === this.Language.ARABIC ? errorMsgAr : errorMsg, 'error');
+                                    return;
+                                }
+                            }
+                        }
+                        
+                        // Check FRQ and FRQ_AI have answers
+                        if (p.type === this.QuestionType.FRQ || p.type === this.QuestionType.FRQ_AI) {
+                            if (!p.answer || p.answer.trim() === '') {
+                                const errorMsg = `Question ${i + 1}, Part ${j + 1} (${p.type}): Missing answer.`;
+                                const errorMsgAr = `السؤال ${i + 1}, الجزء ${j + 1} (${p.type}): الإجابة مفقودة.`;
+                                this.showMessage(this.language === this.Language.ARABIC ? errorMsgAr : errorMsg, 'error');
+                                return;
+                            }
+                        }
+                        
+                        // Check FRQ_AI has AI template ID
                         if (p.type === this.QuestionType.FRQ_AI && !p.metadata.ai_template_id) {
-                             const errorMsg = `Question ${i + 1}, Part ${j + 1} (frq_ai) requires an AI Template ID.`;
-                             const errorMsgAr = `السؤال ${i + 1}, الجزء ${j + 1} (من نوع frq_ai) يتطلب معرف قالب AI.`;
-                             this.showMessage(this.language === this.Language.ARABIC ? errorMsgAr : errorMsg, 'error');
-                             return;
+                            const errorMsg = `Question ${i + 1}, Part ${j + 1} (frq_ai): Requires an AI Template ID.`;
+                            const errorMsgAr = `السؤال ${i + 1}, الجزء ${j + 1} (frq_ai): يتطلب معرف قالب AI.`;
+                            this.showMessage(this.language === this.Language.ARABIC ? errorMsgAr : errorMsg, 'error');
+                            return;
+                        }
+                        
+                        // Check MATCHING has valid pairs
+                        if (p.type === this.QuestionType.MATCHING) {
+                            if (!p.pairs || p.pairs.length === 0) {
+                                const errorMsg = `Question ${i + 1}, Part ${j + 1} (MATCHING): No pairs found.`;
+                                const errorMsgAr = `السؤال ${i + 1}, الجزء ${j + 1} (توصيل): لا يوجد أزواج.`;
+                                this.showMessage(this.language === this.Language.ARABIC ? errorMsgAr : errorMsg, 'error');
+                                return;
+                            }
+                            if (p.pairs.some(pair => !Array.isArray(pair) || pair.length !== 2 || !pair[0] || !pair[1])) {
+                                const errorMsg = `Question ${i + 1}, Part ${j + 1} (MATCHING): Invalid pairs format. Each line must have two items separated by |`;
+                                const errorMsgAr = `السؤال ${i + 1}, الجزء ${j + 1} (توصيل): صيغة الأزواج غير صحيحة. كل سطر يجب أن يحتوي على عنصرين مفصولين بـ |`;
+                                this.showMessage(this.language === this.Language.ARABIC ? errorMsgAr : errorMsg, 'error');
+                                return;
+                            }
+                            
+                            // 🆕 Check for duplicate items in left side
+                            const leftItems = p.pairs.map(pair => pair[0].trim().toLowerCase());
+                            const duplicateLeft = leftItems.filter((item, index) => leftItems.indexOf(item) !== index);
+                            if (duplicateLeft.length > 0) {
+                                const errorMsg = `Question ${i + 1}, Part ${j + 1} (MATCHING): Duplicate items found on left side.`;
+                                const errorMsgAr = `السؤال ${i + 1}, الجزء ${j + 1} (توصيل): عناصر مكررة في الجانب الأيسر.`;
+                                this.showMessage(this.language === this.Language.ARABIC ? errorMsgAr : errorMsg, 'error');
+                                return;
+                            }
+                            
+                            // 🆕 Check for duplicate items in right side
+                            const rightItems = p.pairs.map(pair => pair[1].trim().toLowerCase());
+                            const duplicateRight = rightItems.filter((item, index) => rightItems.indexOf(item) !== index);
+                            if (duplicateRight.length > 0) {
+                                const errorMsg = `Question ${i + 1}, Part ${j + 1} (MATCHING): Duplicate items found on right side.`;
+                                const errorMsgAr = `السؤال ${i + 1}, الجزء ${j + 1} (توصيل): عناصر مكررة في الجانب الأيمن.`;
+                                this.showMessage(this.language === this.Language.ARABIC ? errorMsgAr : errorMsg, 'error');
+                                return;
+                            }
+                            
+                            // 🆕 Check that each pair is unique
+                            const pairStrings = p.pairs.map(pair => `${pair[0].trim().toLowerCase()}|${pair[1].trim().toLowerCase()}`);
+                            const duplicatePairs = pairStrings.filter((item, index) => pairStrings.indexOf(item) !== index);
+                            if (duplicatePairs.length > 0) {
+                                const errorMsg = `Question ${i + 1}, Part ${j + 1} (MATCHING): Duplicate pairs found.`;
+                                const errorMsgAr = `السؤال ${i + 1}, الجزء ${j + 1} (توصيل): أزواج متطابقة تماماً.`;
+                                this.showMessage(this.language === this.Language.ARABIC ? errorMsgAr : errorMsg, 'error');
+                                return;
+                            }
+                        }
+                        
+                        // Check GAP_TEXT has gaps
+                        if (p.type === this.QuestionType.GAP_TEXT) {
+                            if (!p.answers || p.answers.length === 0) {
+                                const errorMsg = `Question ${i + 1}, Part ${j + 1} (GAP_TEXT): No gaps/answers found.`;
+                                const errorMsgAr = `السؤال ${i + 1}, الجزء ${j + 1} (ملء الفراغات): لا توجد فراغات/إجابات.`;
+                                this.showMessage(this.language === this.Language.ARABIC ? errorMsgAr : errorMsg, 'error');
+                                return;
+                            }
+                            
+                            // 🆕 Check that @BLANK exists in the stem
+                            if (!p.stem || !p.stem.includes('@BLANK')) {
+                                const errorMsg = `Question ${i + 1}, Part ${j + 1} (GAP_TEXT): Missing @BLANK in stem.`;
+                                const errorMsgAr = `السؤال ${i + 1}, الجزء ${j + 1} (ملء الفراغات): @BLANK مفقود في نص السؤال.`;
+                                this.showMessage(this.language === this.Language.ARABIC ? errorMsgAr : errorMsg, 'error');
+                                return;
+                            }
+                        }
+                        
+                        // Check INPUT_BOX has answer
+                        if (p.type === this.QuestionType.INPUT_BOX) {
+                            if (!p.answer || (!p.answer.value && p.answer.value !== 0)) {
+                                const errorMsg = `Question ${i + 1}, Part ${j + 1} (INPUT_BOX): Missing answer value.`;
+                                const errorMsgAr = `السؤال ${i + 1}, الجزء ${j + 1} (صندوق إدخال): قيمة الإجابة مفقودة.`;
+                                this.showMessage(this.language === this.Language.ARABIC ? errorMsgAr : errorMsg, 'error');
+                                return;
+                            }
                         }
                     }
                 }
+                
+                // All validation passed - proceed with conversion
 
                 const advancedFormatQuestions = this.questions.map((q, index) => this.transformToAdvancedFormat(q, index));
                 const jsonOutput = document.getElementById('jsonOutput');
@@ -3160,15 +3428,131 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
             }
 
             validateQuestion(q) {
+                // Get valid question types
+                const validTypes = Object.values(this.QuestionType).filter(t => t !== this.QuestionType.UNKNOWN);
+                
                 for (const part of q.parts) {
+                    // Check if type is valid
+                    if (!part.type || part.type === this.QuestionType.UNKNOWN || !validTypes.includes(part.type)) {
+                        const validTypesStr = validTypes.join(', ');
+                        return this.language === this.Language.ARABIC 
+                            ? `نوع السؤال "${part.type}" غير صحيح. الأنواع المسموح بها: ${validTypesStr}` 
+                            : `Invalid question type "${part.type}". Valid types: ${validTypesStr}`;
+                    }
+                    
+                    // Check choices validation
+                    const needsChoices = [this.QuestionType.OQ, this.QuestionType.MCQ, this.QuestionType.MRQ].includes(part.type);
+                    if (needsChoices && part.choices) {
+                        // Check minimum number of choices
+                        if (part.choices.length < 2) {
+                            return this.language === this.Language.ARABIC 
+                                ? `يجب أن يحتوي على اختيارين على الأقل.` 
+                                : `Must have at least 2 choices.`;
+                        }
+                        
+                        // Check for empty choices
+                        const emptyChoices = part.choices.filter(c => !c || c.trim() === '');
+                        if (emptyChoices.length > 0) {
+                            return this.language === this.Language.ARABIC 
+                                ? `يحتوي على اختيارات فارغة.` 
+                                : `Contains empty choices.`;
+                        }
+                        
+                        // Check for duplicate choices
+                        const trimmedChoices = part.choices.map(c => c.trim().toLowerCase());
+                        const duplicates = trimmedChoices.filter((item, index) => trimmedChoices.indexOf(item) !== index);
+                        if (duplicates.length > 0) {
+                            return this.language === this.Language.ARABIC 
+                                ? `يحتوي على اختيارات متطابقة.` 
+                                : `Contains duplicate choices.`;
+                        }
+                    }
+                    
                     if (part.type === this.QuestionType.MCQ) {
                         if (!Array.isArray(part.answer) && part.answer === undefined) {
                             return 'سؤال الاختيار من متعدد يجب أن يحتوي على إجابة صحيحة واحدة (*).';
                         }
+                        // Check answer is within range
+                        if (part.choices && part.answer !== undefined && (part.answer < 0 || part.answer >= part.choices.length)) {
+                            return this.language === this.Language.ARABIC 
+                                ? `رقم الإجابة خارج النطاق المسموح.` 
+                                : `Answer index out of range.`;
+                        }
                     }
+                    
+                    if (part.type === this.QuestionType.MRQ) {
+                        // Check has at least one answer
+                        if (!Array.isArray(part.answer) || part.answer.length === 0) {
+                            return this.language === this.Language.ARABIC 
+                                ? `يجب أن يحتوي على إجابة صحيحة واحدة على الأقل (*).` 
+                                : `Must have at least one correct answer.`;
+                        }
+                        // Check has more than one correct answer
+                        if (part.answer.length === 1) {
+                            return this.language === this.Language.ARABIC 
+                                ? `يحتوي على إجابة صحيحة واحدة فقط. يفضل استخدام MCQ بدلاً منه.` 
+                                : `Has only one correct answer. Consider using MCQ instead.`;
+                        }
+                        // Check answer indices are within range
+                        if (part.choices) {
+                            const invalidIndices = part.answer.filter(idx => idx < 0 || idx >= part.choices.length);
+                            if (invalidIndices.length > 0) {
+                                return this.language === this.Language.ARABIC 
+                                    ? `بعض أرقام الإجابات خارج النطاق المسموح.` 
+                                    : `Some answer indices out of range.`;
+                            }
+                        }
+                    }
+                    
+                    if (part.type === this.QuestionType.OQ) {
+                        if (!part.choices || part.choices.length < 2) {
+                            return this.language === this.Language.ARABIC 
+                                ? `يجب أن يحتوي على عنصرين على الأقل للترتيب.` 
+                                : `Must have at least 2 items to order.`;
+                        }
+                    }
+                    
                     if (part.type === this.QuestionType.MATCHING) {
                         if (!part.pairs || part.pairs.some(p => p.length !== 2)) {
                             return 'كل سطر في سؤال التوصيل يجب أن يحتوي على عنصرين يفصل بينهما "|".';
+                        }
+                        
+                        // Check for duplicate items on left side
+                        if (part.pairs) {
+                            const leftItems = part.pairs.map(pair => pair[0].trim().toLowerCase());
+                            const duplicateLeft = leftItems.filter((item, index) => leftItems.indexOf(item) !== index);
+                            if (duplicateLeft.length > 0) {
+                                return this.language === this.Language.ARABIC 
+                                    ? `عناصر مكررة في الجانب الأيسر.` 
+                                    : `Duplicate items on left side.`;
+                            }
+                            
+                            // Check for duplicate items on right side
+                            const rightItems = part.pairs.map(pair => pair[1].trim().toLowerCase());
+                            const duplicateRight = rightItems.filter((item, index) => rightItems.indexOf(item) !== index);
+                            if (duplicateRight.length > 0) {
+                                return this.language === this.Language.ARABIC 
+                                    ? `عناصر مكررة في الجانب الأيمن.` 
+                                    : `Duplicate items on right side.`;
+                            }
+                            
+                            // Check for duplicate pairs
+                            const pairStrings = part.pairs.map(pair => `${pair[0].trim().toLowerCase()}|${pair[1].trim().toLowerCase()}`);
+                            const duplicatePairs = pairStrings.filter((item, index) => pairStrings.indexOf(item) !== index);
+                            if (duplicatePairs.length > 0) {
+                                return this.language === this.Language.ARABIC 
+                                    ? `أزواج متطابقة تماماً.` 
+                                    : `Duplicate pairs found.`;
+                            }
+                        }
+                    }
+                    
+                    if (part.type === this.QuestionType.GAP_TEXT) {
+                        // Check @BLANK exists
+                        if (!part.stem || !part.stem.includes('@BLANK')) {
+                            return this.language === this.Language.ARABIC 
+                                ? `@BLANK مفقود في نص السؤال.` 
+                                : `Missing @BLANK in stem.`;
                         }
                     }
                     if (part.type === this.QuestionType.STRING && part.guidelines) {
