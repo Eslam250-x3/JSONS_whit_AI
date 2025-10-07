@@ -2098,8 +2098,8 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                 };
             }
             _transformStringPart(part, globalMetadata, lang) {
-    // Use the AI template ID from the part metadata, global metadata, or fall back to default
-    const aiTemplateId = part.metadata?.ai_template_id || globalMetadata?.ai_template_id || 593158513739;
+    // Always use fixed AI template ID for String questions
+    const aiTemplateId = 593158513739;
 
     const result = {
         choices: null,
