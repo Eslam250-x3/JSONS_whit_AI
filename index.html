@@ -3628,8 +3628,10 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                 question.parts.forEach(part => {
                     if (question.statement) {
                         newContentBlock += `@PART\n`;
+                        // Add type only for multi-part questions
+                        newContentBlock += `type: ${part.type}\n`;
                     }
-                    newContentBlock += `type: ${part.type}\n`;
+                    // For single-part questions, type is already in _metaHeader, so don't add it here
                     newContentBlock += `@STEM\n${part.stem}\n`;
 
                     if (part.type === 'mcq' || part.type === 'mrq' || part.type === 'oq') {
@@ -3965,3 +3967,4 @@ Strictly follow this formatting for each question:
     </script>
 </body>
 </html>
+ 
