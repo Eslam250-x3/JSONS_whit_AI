@@ -2239,28 +2239,22 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
 
                 return {
                     parts: question.parts.map((p, partIndex) => this._transformPart(p, meta, partIndex)),
-                    statement: question.statement ? this.processTextForHtml(question.statement, lang) : null,
+                    statement: question.statement ? this.processTextForHtml(question.statement, lang, null, -1, 'statement', -1, null) : null,
                     instance_number: 1,
                     metadata: finalMetadata
                 };
             }
             _transformPart(part, globalMetadata, index) {
                 const lang = globalMetadata.language || this.customization.lang;
-                let processedStem = part.stem;
                 
-                // Only replace @BLANK with HTML span for GAP_TEXT questions
-                // For other question types, let processTextForHtml handle @BLANK in math contexts
-                if (part.type === this.QuestionType.GAP_TEXT && processedStem && processedStem.includes('@BLANK')) {
-                    const gapSpan = '<span data-node-type="blank-line" data-node-variation="gap"> </span>';
-                    processedStem = processedStem.replace(/@BLANK/g, gapSpan);
-                }
-
+                // No need to pre-process @BLANK here anymore
+                // processTextForHtml will handle @BLANK based on question type
                 const partJson = {
                     n: index + 1,
                     type: this.questionTypeConfigs[part.type]?.jsonType || part.type,
                     subtype: null,
                     standalone: false,
-                    stem: this.processTextForHtml(processedStem, lang)
+                    stem: this.processTextForHtml(part.stem, lang, null, index, 'stem', -1, part.type)
                 };
                 switch (part.type) {
                     case this.QuestionType.MCQ:
@@ -2295,7 +2289,7 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                 return {
                     choices: (part.choices || []).map((choice, i) => ({
                         type: correctAnswers.has(i) ? 'key' : 'distractor',
-                        html_content: this.processTextForHtml(choice, lang),
+                        html_content: this.processTextForHtml(choice, lang, null, -1, 'choice', i, part.type),
                         values: [],
                         unit: null,
                         index: i,
@@ -2316,7 +2310,7 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                     direction: this.customization.direction, // Use the customized direction
                     choices: shuffledItems.map((item, i) => ({
                         type: 'distractor',
-                        html_content: this.processTextForHtml(item.text, lang),
+                        html_content: this.processTextForHtml(item.text, lang, null, -1, 'choice', i, part.type),
                         correct_order: item.originalIndex + 1,
                         values: [],
                         unit: null,
@@ -2334,7 +2328,7 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                 group1Items.forEach((item, i) => {
                     choices.push({ 
                         type: 'distractor', 
-                        html_content: this.processTextForHtml(item, lang),
+                        html_content: this.processTextForHtml(item, lang, null, -1, 'group1', i, part.type),
                         group: 1, 
                         correct_order: i + 1, 
                         values: [], 
@@ -2355,7 +2349,7 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                 shuffledGroup2Items.forEach((item, i) => {
                     choices.push({ 
                         type: 'distractor', 
-                        html_content: this.processTextForHtml(item.text, lang),
+                        html_content: this.processTextForHtml(item.text, lang, null, -1, 'group2', i, part.type),
                         group: 2, 
                         correct_order: item.originalIndex + 1,
                         values: [], 
@@ -2373,7 +2367,7 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                 const processedStem = (part.stem || '').replace(/@BLANK|_{3,}/g, stem_html_gap);
                 return {
                     gap_text_keys: (part.answers || []).map(ans => ({ value: ans.value, correct_order: ans.order })),
-                    stem: this.processTextForHtml(processedStem, lang),
+                    stem: this.processTextForHtml(processedStem, lang, null, -1, 'stem', -1, 'gapText'),
                     choices: []
                 };
             }
@@ -2404,7 +2398,7 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
             _transformFRQ_AIPart(part, globalMetadata, lang) {
                 const result = {
                     choices: [],
-                    answer: this._formatAnswerHtml(part.answer, lang)
+                    answer: this._formatAnswerHtml(part.answer, lang, part.type)
                 };
                 const aiTemplateId = part.metadata.ai_template_id || globalMetadata.ai_template_id;
                 if (aiTemplateId) {
@@ -2412,7 +2406,7 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                 }
                 return result;
             }
-            _formatAnswerHtml(answerText, lang) {
+            _formatAnswerHtml(answerText, lang, questionType = null) {
                 if (!answerText) return '';
                 const isAr = lang === this.Language.ARABIC;
                 const dirAttr = isAr ? ' dir="rtl"' : '';
@@ -2422,7 +2416,7 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                     const items = lines.map(l => l.replace(/^([§\-\*\d]+[\).:]?|•)\s+/, '')).map(item => `<li class="LexicalTheme__listItem" style="text-align: justify;"><span style="white-space: pre-wrap;">${DOMPurify.sanitize(item)}</span></li>`).join('');
                     return `<ul class="LexicalTheme__list"${dirAttr}>${items}</ul>`;
                 }
-                return this.processTextForHtml(answerText, lang);
+                return this.processTextForHtml(answerText, lang, null, -1, 'answer', -1, questionType);
             }
             _transformInputBoxPart(part) {
                 const answer = {
@@ -2466,16 +2460,24 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                 this.logger.info("All data has been cleared.");
             }
             
-            processTextForHtml(text, language, questionId, partIndex, fieldType, choiceIndex = -1) {
+            processTextForHtml(text, language, questionId, partIndex, fieldType, choiceIndex = -1, questionType = null) {
                 if (!text) return '';
                 const direction = language === this.Language.ARABIC ? ' dir="rtl"' : '';
 
                 // FIX: Changed from 5 or more underscores to 4 or more, per user request.
+                // Underscores (____) are replaced with "space" variation for blank lines in all question types
                 let processedText = text.replace(/_{4,}/g, '<span data-node-type="blank-line" data-node-variation="space">&nbsp;</span>');
                 
-                // Replace @BLANK with blank-line span if it appears in text (for gapText questions)
-                // This ensures @BLANK doesn't show up in the final display
-                processedText = processedText.replace(/@BLANK/g, '<span data-node-type="blank-line" data-node-variation="gap"> </span>');
+                // Replace @BLANK based on question type:
+                // - GapText questions → "gap" variation (for fillable gaps)
+                // - Other question types → "space" variation (for blank lines)
+                if (processedText.includes('@BLANK')) {
+                    if (questionType === this.QuestionType.GAP_TEXT || questionType === 'gapText') {
+                        processedText = processedText.replace(/@BLANK/g, '<span data-node-type="blank-line" data-node-variation="gap"> </span>');
+                    } else {
+                        processedText = processedText.replace(/@BLANK/g, '<span data-node-type="blank-line" data-node-variation="space">&nbsp;</span>');
+                    }
+                }
 
                 // If the text contains a poem block, split into pre/poem/post segments and render exactly as required
                 const poemRegex = /@POEM[\t ]*\n([\s\S]*?)\n@END_POEM/;
@@ -2677,30 +2679,26 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                 }
 
                 if (q.statement) {
-                    html += `<div class="statement-preview">${this.processTextForHtml(q.statement, lang, q.metadata.id, -1, 'statement')}</div>`;
+                    html += `<div class="statement-preview">${this.processTextForHtml(q.statement, lang, q.metadata.id, -1, 'statement', -1, null)}</div>`;
                 }
                 q.parts.forEach((p, pIndex) => {
                     const isInteractive = p.type === this.QuestionType.MCQ || p.type === this.QuestionType.MRQ;
                     html += `<div class="part-preview" data-interactive="${isInteractive}" data-part-index="${pIndex}">`;
                     html += `<div class="question-type-badge type-${p.type}">${this.questionTypeConfigs[p.type]?.label || p.type} | ID: ${questionIdText}</div>`;
-                    // Replace @BLANK with visual representation for gapText questions in preview
-                    let stemToDisplay = p.stem;
-                    if (p.type === 'gapText' && stemToDisplay && stemToDisplay.includes('@BLANK')) {
-                        stemToDisplay = stemToDisplay.replace(/@BLANK/g, '<span data-node-type="blank-line" data-node-variation="gap"> </span>');
-                    }
-                    html += `<div>${this.processTextForHtml(stemToDisplay, lang, q.metadata.id, pIndex, 'stem')}</div>`;
+                    // No need to manually replace @BLANK anymore - processTextForHtml will handle it based on question type
+                    html += `<div>${this.processTextForHtml(p.stem, lang, q.metadata.id, pIndex, 'stem', -1, p.type)}</div>`;
                     
                     if (p.type === 'oq' || p.type === 'mcq' || p.type === 'mrq') {
                         const correctAnswers = new Set(Array.isArray(p.answer) ? p.answer : [p.answer]);
                         html += (p.choices || []).map((choice, cIndex) =>
-                            `<div class="choice-item ${correctAnswers.has(cIndex) ? 'correct' : ''}" data-question-id="${q.metadata.id}" data-choice-index="${cIndex}">${this.processTextForHtml(choice, lang, q.metadata.id, pIndex, 'choice', cIndex)}</div>`
+                            `<div class="choice-item ${correctAnswers.has(cIndex) ? 'correct' : ''}" data-question-id="${q.metadata.id}" data-choice-index="${cIndex}">${this.processTextForHtml(choice, lang, q.metadata.id, pIndex, 'choice', cIndex, p.type)}</div>`
                         ).join('');
                     } else if (p.type === 'matching') {
-                        let g1Html = (p.group1 || []).map((item, i) => `<div class="matching-item">${i+1}. ${this.processTextForHtml(item, lang, q.metadata.id, pIndex, 'group1', i)}</div>`).join('');
-                        let g2Html = (p.group2 || []).map((item, i) => `<div class="matching-item">${String.fromCharCode(65 + i)}. ${this.processTextForHtml(item, lang, q.metadata.id, pIndex, 'group2', i)}</div>`).join('');
+                        let g1Html = (p.group1 || []).map((item, i) => `<div class="matching-item">${i+1}. ${this.processTextForHtml(item, lang, q.metadata.id, pIndex, 'group1', i, p.type)}</div>`).join('');
+                        let g2Html = (p.group2 || []).map((item, i) => `<div class="matching-item">${String.fromCharCode(65 + i)}. ${this.processTextForHtml(item, lang, q.metadata.id, pIndex, 'group2', i, p.type)}</div>`).join('');
                         html += `<div class="matching-preview"><div class="matching-column"><strong>${this.language === this.Language.ARABIC ? 'القائمة أ' : 'List A'}</strong>${g1Html}</div><div class="matching-column"><strong>${this.language === this.Language.ARABIC ? 'القائمة ب' : 'List B'}</strong>${g2Html}</div></div>`;
                     } else if (p.type === 'string' || p.type === 'frq_ai') {
-                        html += `<div class="choice-item correct"><strong>${this.language === this.Language.ARABIC ? 'الإجابة:' : 'Answer:'}</strong> ${this.processTextForHtml(p.answer, lang, q.metadata.id, pIndex, 'answer')}</div>`;
+                        html += `<div class="choice-item correct"><strong>${this.language === this.Language.ARABIC ? 'الإجابة:' : 'Answer:'}</strong> ${this.processTextForHtml(p.answer, lang, q.metadata.id, pIndex, 'answer', -1, p.type)}</div>`;
                         
                         // Display guidelines for string questions if available
                         if (p.type === 'string' && p.guidelines && Array.isArray(p.guidelines) && p.guidelines.length > 0) {
@@ -2727,7 +2725,7 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                             </div>`;
                         }
                     } else if (p.type === 'gapText') {
-                        html += `<div class="gapped-text-answers"><strong>${this.language === this.Language.ARABIC ? 'الإجابات بالترتيب:' : 'Answers in order:'}</strong><ul>${(p.answers || []).map((ans, aIndex) => (ans && ans.value) ? `<li>${this.processTextForHtml(ans.value, lang, q.metadata.id, pIndex, 'gap', aIndex)}</li>` : '').join('')}</ul></div>`;
+                        html += `<div class="gapped-text-answers"><strong>${this.language === this.Language.ARABIC ? 'الإجابات بالترتيب:' : 'Answers in order:'}</strong><ul>${(p.answers || []).map((ans, aIndex) => (ans && ans.value) ? `<li>${this.processTextForHtml(ans.value, lang, q.metadata.id, pIndex, 'gap', aIndex, p.type)}</li>` : '').join('')}</ul></div>`;
                     } else if (p.type === 'input_box') {
                         if (p.answer && typeof p.answer.value !== 'undefined') {
                             html += `<div class="choice-item correct"><strong>${this.language === this.Language.ARABIC ? 'الإجابة:' : 'Answer:'}</strong> ${p.answer.value} ${p.answer.unit || ''}</div>`;
