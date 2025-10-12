@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>محول الأسئلة الذكي المتطور - النسخة النهائية</title>
+    <title>رافع الأسئلة المجمع - Bulk Question Uploader</title>
     <!-- Handsontable CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/handsontable@14.3.0/dist/handsontable.min.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -53,6 +53,16 @@
         }
         .panel:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1); }
         .panel h3 { color: #4f46e5; margin-bottom: 20px; font-size: 1.3em; display: flex; align-items: center; gap: 10px; }
+        
+        /* Statistics Section */
+        .stats-section { margin-bottom: 20px; }
+        .stat-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: white; border-radius: 10px; margin-bottom: 10px; border: 1px solid #e2e8f0; }
+        .stat-label { font-weight: 600; color: #374151; }
+        .stat-value { font-weight: 700; color: #4f46e5; font-size: 1.1em; }
+        .question-types-stats { margin-top: 15px; }
+        .type-stat { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #f8fafc; border-radius: 8px; margin-bottom: 6px; border-left: 3px solid #4f46e5; }
+        .type-name { font-weight: 500; color: #475569; }
+        .type-count { font-weight: 600; color: #4f46e5; background: #e0e7ff; padding: 2px 8px; border-radius: 12px; font-size: 0.9em; }
         .question-type-selector {
             display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-bottom: 20px;
         }
@@ -137,7 +147,7 @@
         .question-type-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 0.8em; font-weight: bold; margin-bottom: 10px; }
         .type-mcq { background: #dbeafe; color: #1e40af; } .type-mrq { background: #e0e7ff; color: #3730a3; } .type-matching { background: #e0e7ff; color: #3730a3; }
         .type-gapText { background: #d1fae5; color: #065f46; } .type-string { background: #fef3c7; color: #92400e; }
-        .type-frq { background: #fce7f3; color: #be185d; } .type-frq_ai { background: #fce7f3; color: #be185d; }
+        .type-frq_ai { background: #fce7f3; color: #be185d; }
         .type-oq { background: #fef9c3; color: #854d0e; } .type-input_box { background: #f3e8ff; color: #6b21a8; } .type-unknown { background: #fee2e2; color: #991b1b; }
         .choice-item { padding: 8px 15px; margin: 5px 0; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; transition: all 0.2s ease; }
         .part-preview[data-interactive="true"] .choice-item { cursor: pointer; }
@@ -353,43 +363,42 @@
                     </div>
                 </div>
                 <div class="controls">
-                    <button id="generate-questions-btn" class="btn btn-primary" aria-label="توليد أسئلة">🚀 توليد أسئلة</button>
-                    <button id="smart-analyze-btn" class="btn btn-primary" aria-label="تحليل ذكي">🤖 تحليل ذكي</button>
+                    <button id="generate-questions-btn" class="btn btn-primary">🚀 توليد أسئلة</button>
+                    <button id="smart-analyze-btn" class="btn btn-primary">👁️ عرض</button>
                 </div>
                  <div class="controls">
-                    <button id="clean-format-btn" class="btn btn-secondary" aria-label="تنظيف وتنسيق">✨ تنظيف وتنسيق</button>
-                    <button id="aiEnhanceBtn" class="btn btn-ai" aria-label="تحسين بالذكاء الاصطناعي">💎 تحسين بالـ AI</button>
+                    <button id="aiEnhanceBtn" class="btn btn-ai">💎 تحسين بالـ AI</button>
                 </div>
                 <div class="controls">
-                    <button id="convert-json-btn" class="btn btn-success" aria-label="تحويل إلى JSON">🔄 تحويل لـ JSON</button>
-                    <button id="customizeBtn" class="btn btn-secondary" aria-label="تخصيص">⚙️ تخصيص</button>
-                    <button id="tagsBtn" class="btn btn-secondary" aria-label="إدراج وسم">🏷️ Tags</button>
-                    <button id="clear-all-btn" class="btn btn-secondary" aria-label="مسح الكل">🗑️ مسح الكل</button>
-                    <button id="langSwitchBtn" class="btn btn-warning" aria-label="تبديل اللغة">🌐 English</button>
+                    <button id="convert-json-btn" class="btn btn-success">🔄 تحويل لـ JSON</button>
+                    <button id="customizeBtn" class="btn btn-secondary">⚙️ تخصيص</button>
+                    <button id="tagsBtn" class="btn btn-secondary">🏷️ Tags</button>
+                    <button id="clear-all-btn" class="btn btn-secondary">🗑️ مسح الكل</button>
+                    <button id="langSwitchBtn" class="btn btn-warning">🌐 English</button>
                 </div>
                 <div class="loading" id="loading">
                     <div class="spinner"></div>
                     <p id="loading-text">جاري التحليل...</p>
                 </div>
             </div>
-            <!-- Analysis & Output Panel -->
+            <!-- Statistics Panel -->
             <div class="panel">
-                <h3 id="panel-title-3">🔍 تحليل ومخرجات</h3>
-                <div class="analysis-section" id="analysisSection">
-                    <div class="analysis-item"><span id="analysis-label-1">جودة الكشف:</span><div class="confidence-bar"><div id="detectionQuality" class="confidence-fill" style="width: 0%"></div></div></div>
-                    <div class="analysis-item"><span id="analysis-label-2">دقة التصنيف:</span><div class="confidence-bar"><div id="classificationAccuracy" class="confidence-fill" style="width: 0%"></div></div></div>
-                    <div class="analysis-item"><span id="analysis-label-3">اكتمال البيانات:</span><div class="confidence-bar"><div id="dataCompleteness" class="confidence-fill" style="width: 0%"></div></div></div>
+                <h3 id="stats-title">📊 إحصائيات الأسئلة</h3>
+                <div class="stats-section" id="statsSection">
+                    <div class="stat-item">
+                        <span class="stat-label">إجمالي الأسئلة:</span>
+                        <span class="stat-value" id="totalQuestions">0</span>
                 </div>
-                <div class="stats" id="stats">
-                    <div class="stat-card"><h4 id="stats-label-1">إجمالي الأسئلة</h4><span id="totalQuestions">0</span></div>
-                    <div class="stat-card"><h4 id="stats-label-2">معدل الثقة</h4><span id="confidenceScore">0%</span></div>
+                    <div class="question-types-stats" id="questionTypesStats">
+                        <!-- سيتم ملؤها ديناميكياً -->
+                    </div>
                 </div>
                 <div class="json-output" id="jsonOutput" style="display: none;"></div>
                 <div class="controls" style="margin-top: auto;">
-                    <button id="copyBtn" class="btn btn-secondary" disabled aria-label="نسخ JSON">📋 نسخ JSON</button>
-                    <button id="downloadBtn" class="btn btn-warning" disabled aria-label="تحميل JSON">💾 تحميل</button>
-                    <button id="downloadZipBtn" class="btn btn-warning" disabled aria-label="تحميل ZIP">🗜️ تحميل كـ ZIP</button>
-                    <button id="csvBtn" class="btn btn-secondary" disabled aria-label="CSV">📄 CSV</button>
+                    <button id="copyBtn" class="btn btn-secondary" disabled>📋 نسخ JSON</button>
+                    <button id="downloadBtn" class="btn btn-warning" disabled>💾 تحميل</button>
+                    <button id="downloadZipBtn" class="btn btn-warning" disabled>🗜️ تحميل كـ ZIP</button>
+                    <button id="csvBtn" class="btn btn-secondary" disabled>📄 CSV</button>
                 </div>
             </div>
             <!-- Preview Panel -->
@@ -407,7 +416,7 @@
     <!-- Customize Modal -->
     <div id="customizeModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.25); z-index:2000; align-items:center; justify-content:center;" role="dialog" aria-modal="true" aria-labelledby="customize-title">
         <div style="background:white; border-radius:16px; max-width:400px; width:90vw; padding:32px 24px; box-shadow:0 8px 32px rgba(0,0,0,0.15); position:relative;">
-            <button id="customize-modal-close-btn" style="position:absolute; top:12px; left:12px; background:none; border:none; font-size:1.5em; cursor:pointer;" aria-label="إغلاق">×</button>
+            <button id="customize-modal-close-btn" style="position:absolute; top:12px; left:12px; background:none; border:none; font-size:1.5em; cursor:pointer;">×</button>
             <h2 id="customize-title" style="text-align:center; margin-bottom:24px; color:#4f46e5;">تخصيص الإعدادات</h2>
             <div style="margin-bottom:18px;">
                 <label for="categorySelect" style="font-weight:bold;">Category</label>
@@ -445,9 +454,8 @@
             <div style="margin-bottom:18px;">
                 <label for="sourceIdSelect" style="font-weight:bold;">Source ID (Name)</label>
                 <select id="sourceIdSelect" style="width:100%; padding:10px; border-radius:8px; border:1px solid #e5e7eb; margin-top:6px;">
-                    <option value="qa">qa</option>
-                    <option value="bh">bh</option>
-                    <option value="om">om</option>
+                    <option value="">none</option>
+                    <!-- Options will be populated dynamically by populateSourceIdDropdown() -->
                 </select>
             </div>
             <div style="margin-bottom:24px;">
@@ -456,7 +464,6 @@
                     <option value="Modern_standard" selected>Modern_standard</option>
                 </select>
             </div>
-            <button id="aiTemplateBtn" class="btn btn-secondary" style="width:100%; margin-top: 10px;">AI Template ID</button>
             <button id="subjectTemplateBtn" class="btn btn-secondary" style="width:100%; margin-top: 10px;">Subject Template ID</button>
             <button id="customize-save-btn" class="btn btn-primary" style="width:100%; margin-top: 10px;">حفظ</button>
         </div>
@@ -465,7 +472,7 @@
     <div id="tagsModal" role="dialog" aria-modal="true" aria-labelledby="tagsModalHeader">
         <div id="tagsModalHeader">
             <span>إدراج وسم (Tag)</span>
-            <button id="tags-modal-close-btn" aria-label="إغلاق">×</button>
+            <button id="tags-modal-close-btn">×</button>
         </div>
         <div id="tagsModalBody">
              <div class="tags-section" id="templates-section">
@@ -517,7 +524,7 @@
     <!-- Handsontable CSV Modal -->
     <div id="csvModalBg" role="dialog" aria-modal="true" aria-labelledby="csv-title">
         <div id="csvModal">
-            <button id="csv-modal-close-btn" style="position:absolute; top:12px; left:12px; background:none; border:none; font-size:1.5em; cursor:pointer;" aria-label="إغلاق">×</button>
+            <button id="csv-modal-close-btn" style="position:absolute; top:12px; left:12px; background:none; border:none; font-size:1.5em; cursor:pointer;">×</button>
             <h2 id="csv-title" style="text-align:center; margin-bottom:18px; color:#4f46e5;">CSV Editor</h2>
             <div class="csv-warning" id="csvWarning" style="display:none;"></div>
             <div id="hotTable" class="hot-container"></div>
@@ -527,22 +534,10 @@
             </div>
         </div>
     </div>
-    <!-- AI Template ID Modal -->
-    <div id="aiTemplateModalBg" role="dialog" aria-modal="true" aria-labelledby="ai-template-title">
-        <div id="aiTemplateModal">
-            <button id="ai-template-modal-close-btn" style="position:absolute; top:12px; left:12px; background:none; border:none; font-size:1.5em; cursor:pointer;" aria-label="إغلاق">×</button>
-            <h2 id="ai-template-title" style="text-align:center; margin-bottom:18px; color:#4f46e5;">Set AI Template IDs</h2>
-            <div id="hotAiTemplateTable" class="hot-container"></div>
-            <div style="display:flex; gap:10px; justify-content:center; margin-top:18px;">
-                <button id="ai-template-save-btn" class="btn btn-success">💾 حفظ</button>
-                <button id="ai-template-close-btn" class="btn btn-secondary">❌ إغلاق</button>
-            </div>
-        </div>
-    </div>
     <!-- Subject Template ID Modal -->
     <div id="subjectTemplateModalBg" role="dialog" aria-modal="true" aria-labelledby="subject-template-title">
         <div id="subjectTemplateModal">
-            <button id="subject-template-modal-close-btn" style="position:absolute; top:12px; left:12px; background:none; border:none; font-size:1.5em; cursor:pointer;" aria-label="إغلاق">×</button>
+            <button id="subject-template-modal-close-btn" style="position:absolute; top:12px; left:12px; background:none; border:none; font-size:1.5em; cursor:pointer;">×</button>
             <h2 id="subject-template-title" style="text-align:center; margin-bottom:18px; color:#4f46e5;">اختر المادة لتطبيق Template ID</h2>
             <div style="margin-bottom: 20px;">
                 <label for="subjectSelect" style="font-weight:bold; display:block; margin-bottom:10px;">المادة / Subject:</label>
@@ -869,7 +864,7 @@
                         country: 'eg',
                         category: 'lesson',
                         dialect: 'Modern_standard',
-                        sourceId: 182136230818,
+                        sourceId: '', // Start with empty value to force selection
                         lang: 'ar',
                         direction: 'vertical' // Default direction for OQ
                     },
@@ -887,7 +882,7 @@
                 // --- 2. ENUMS & CONSTANTS ---
                 this.QuestionType = Object.freeze({
                     MCQ: "mcq", MRQ: "mrq", STRING: "string", OQ: "oq", GAP_TEXT: "gapText",
-                    MATCHING: "matching", INPUT_BOX: "input_box", FRQ: "frq", FRQ_AI: "frq_ai", UNKNOWN: "unknown"
+                    MATCHING: "matching", INPUT_BOX: "input_box", FRQ_AI: "frq_ai", UNKNOWN: "unknown"
                 });
                 this.Language = Object.freeze({ ARABIC: "ar", ENGLISH: "en" });
                 // --- 3. UTILITIES ---
@@ -1042,7 +1037,6 @@
             }
             bindEvents() {
                 document.getElementById('smart-analyze-btn').addEventListener('click', () => this.smartAnalyze());
-                document.getElementById('clean-format-btn').addEventListener('click', () => this.cleanAndFormat());
                 document.getElementById('aiEnhanceBtn').addEventListener('click', () => this.enhanceWithAI());
                 document.getElementById('convert-json-btn').addEventListener('click', () => this.convertToJSON());
                 document.getElementById('clear-all-btn').addEventListener('click', () => this.clearAll());
@@ -1060,11 +1054,19 @@
                 document.getElementById('geminiApiKey').addEventListener('input', (e) => this.saveApiKeys('gemini', e.target.value));
                 document.getElementById('openaiApiKey').addEventListener('input', (e) => this.saveApiKeys('openai', e.target.value));
                 
+                // Source ID change event
+                document.getElementById('sourceIdSelect').addEventListener('change', (e) => {
+                    this.customization.sourceId = e.target.value;
+                    this.saveSettings();
+                    if (document.getElementById('jsonOutput').style.display === 'block') {
+                        this.convertToJSON();
+                    }
+                });
+                
                 // Customize Modal Events
                 document.getElementById('customizeBtn').addEventListener('click', () => this.openCustomizeModal());
                 document.getElementById('customize-modal-close-btn').addEventListener('click', () => this.closeCustomizeModal());
                 document.getElementById('customize-save-btn').addEventListener('click', () => this.saveCustomization());
-                document.getElementById('aiTemplateBtn').addEventListener('click', () => this.openAiTemplateModal());
                 document.getElementById('subjectTemplateBtn').addEventListener('click', () => this.openSubjectTemplateModal());
                 
                 // Tags Modal Events
@@ -1087,10 +1089,6 @@
                     this.validationTimeout = setTimeout(() => this.runLiveValidation(), 500);
                 });
 
-                // AI Template ID Modal Events
-                document.getElementById('ai-template-modal-close-btn').addEventListener('click', () => this.closeAiTemplateModal());
-                document.getElementById('ai-template-save-btn').addEventListener('click', () => this.saveAiTemplateData());
-                document.getElementById('ai-template-close-btn').addEventListener('click', () => this.closeAiTemplateModal());
 
                 // Subject Template ID Modal Events
                 document.getElementById('subject-template-modal-close-btn').addEventListener('click', () => this.closeSubjectTemplateModal());
@@ -1103,7 +1101,6 @@
                     if (e.key === 'Escape') {
                         if (document.getElementById('csvModalBg').style.display === 'flex') this.closeCSVModal();
                         if (document.getElementById('customizeModal').style.display === 'flex') this.closeCustomizeModal();
-                        if (document.getElementById('aiTemplateModalBg').style.display === 'flex') this.closeAiTemplateModal();
                         if (document.getElementById('subjectTemplateModalBg').style.display === 'flex') this.closeSubjectTemplateModal();
                         if (document.getElementById('tagsModal').style.display === 'block') this.toggleTagsModal(false);
                         if (document.getElementById('generationModalBg').style.display === 'flex') this.closeGenerationModal();
@@ -1169,7 +1166,6 @@
                     [this.QuestionType.MATCHING]: { label: 'Matching', jsonType: 'matching' },
                     [this.QuestionType.GAP_TEXT]: { label: 'Gapped Text', jsonType: 'gapText' },
                     [this.QuestionType.STRING]: { label: 'String', jsonType: 'string' },
-                    [this.QuestionType.FRQ]: { label: 'Free Response', jsonType: 'frq' },
                     [this.QuestionType.OQ]: { label: 'Ordering (OQ)', jsonType: 'oq' },
                     [this.QuestionType.FRQ_AI]: { label: 'FRQ (AI)', jsonType: 'frq_ai' },
                     [this.QuestionType.INPUT_BOX]: { label: 'Input Box', jsonType: 'input_box' },
@@ -1393,7 +1389,7 @@ You are an expert question formatter and a meticulous academic assistant. Your t
 
 **Core Instructions:**
 1.  **Detect** every question in the text.
-2.  **Auto-detect** the type for each question from: mcq, mrq, oq, gapText, matching, string, frq, frq_ai, input_box.
+2.  **Auto-detect** the type for each question from: mcq, mrq, oq, gapText, matching, string, frq_ai, input_box.
 3.  **Format each question as follows:**
     -   A metadata line at the top, e.g., \`type: mcq\` or \`ai_template_id: 593158513739\`
     -   A \`@STEM\` tag for the main question text.
@@ -1465,7 +1461,7 @@ ${rawText}
                 if (hasAnswer) {
                     const ans = (block.match(/@ANSWER([\s\S]*)$/i) || [, ''])[1].trim();
                     if (/\|/.test(ans)) return this.QuestionType.INPUT_BOX;
-                    return ans.split(/\s+/).length > 12 ? this.QuestionType.FRQ : this.QuestionType.STRING;
+                    return ans.split(/\s+/).length > 12 ? this.QuestionType.FRQ_AI : this.QuestionType.STRING;
                 }
                 return this.QuestionType.STRING;
             }
@@ -1547,12 +1543,12 @@ ${rawText}
                         return q;
                     });
 
-                    this.updateUIAfterChange(this.language === this.Language.ARABIC ? 'تم التحليل بنجاح.' : 'Analysis successful.');
+                    this.updateUIAfterChange(this.language === this.Language.ARABIC ? 'تم رفع الأسئلة بنجاح.' : 'Questions uploaded successfully.');
                     this.logger.info(`Analysis complete. Found ${this.questions.length} questions.`);
 
                 } catch (error) {
                     this.logger.error("Smart Analysis Error:", error);
-                    this.showMessage(`${this.language === this.Language.ARABIC ? 'حدث خطأ أثناء التحليل: ' : 'Error during analysis: '}${error.message}`, 'error');
+                    this.showMessage(`${this.language === this.Language.ARABIC ? 'حدث خطأ أثناء رفع الأسئلة: ' : 'Error during upload: '}${error.message}`, 'error');
                 } finally {
                     this.setLoading(false);
                 }
@@ -1765,7 +1761,6 @@ ${rawText}
                 }
             }
             break;
-        case this.QuestionType.FRQ:
         case this.QuestionType.FRQ_AI:
             part.answer = (content.ANSWER || '').trim();
             break;
@@ -1836,7 +1831,6 @@ ${rawText}
             break;
         }
         case this.QuestionType.STRING:
-        case this.QuestionType.FRQ:
         case this.QuestionType.FRQ_AI:
             part.answer = remainingLines.join('\n').trim();
             break;
@@ -1915,8 +1909,22 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                     return;
                 }
                 
+                // Check if Source ID is selected
+                const sourceIdSelect = document.getElementById('sourceIdSelect');
+                if (!sourceIdSelect || !sourceIdSelect.value || sourceIdSelect.value.trim() === '' || sourceIdSelect.value === 'none') {
+                    this.showMessage(this.language === this.Language.ARABIC ? 'يجب اختيار Source ID صحيح قبل تحويل الأسئلة إلى JSON.' : 'Please select a valid Source ID before converting questions to JSON.', 'error');
+                    return;
+                }
+                
                 // Comprehensive validation check - must be 100% valid before allowing JSON export
-                // First, get valid question types
+                // First, validate Source ID
+                const sourceIdValue = sourceIdSelect.value;
+                if (!sourceIdValue || sourceIdValue === 'none') {
+                    this.showMessage(this.language === this.Language.ARABIC ? 'يجب اختيار Source ID صحيح قبل التصدير.' : 'Please select a valid Source ID before export.', 'error');
+                    return;
+                }
+                
+                // Then, get valid question types
                 const validTypes = Object.values(this.QuestionType).filter(t => t !== this.QuestionType.UNKNOWN);
                 
                 // 🆕 Check for duplicate IDs across all questions
@@ -2077,8 +2085,14 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                                 return;
                             }
                             
-                            // Check guidelines if they exist
-                            if (p.guidelines && Array.isArray(p.guidelines)) {
+                            // Check guidelines - REQUIRED for STRING questions
+                            if (!p.guidelines || !Array.isArray(p.guidelines) || p.guidelines.length === 0) {
+                                const errorMsg = `Question ${i + 1}, Part ${j + 1} (STRING): Guidelines are required. Add @GUIDELINES with examples.`;
+                                const errorMsgAr = `السؤال ${i + 1}, الجزء ${j + 1} (نص قصير): الإرشادات مطلوبة. أضف @GUIDELINES مع أمثلة.`;
+                                this.showMessage(this.language === this.Language.ARABIC ? errorMsgAr : errorMsg, 'error');
+                                return;
+                            }
+                            
                                 const invalidGuidelines = p.guidelines.filter(g => 
                                     !g.student_answer || g.mark === undefined || !g.comment
                                 );
@@ -2087,12 +2101,11 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                                     const errorMsgAr = `السؤال ${i + 1}, الجزء ${j + 1} (نص قصير): صيغة الإرشادات غير صحيحة.`;
                                     this.showMessage(this.language === this.Language.ARABIC ? errorMsgAr : errorMsg, 'error');
                                     return;
-                                }
                             }
                         }
                         
-                        // Check FRQ and FRQ_AI have answers
-                        if (p.type === this.QuestionType.FRQ || p.type === this.QuestionType.FRQ_AI) {
+                        // Check FRQ_AI have answers
+                        if (p.type === this.QuestionType.FRQ_AI) {
                             if (!p.answer || p.answer.trim() === '') {
                                 const errorMsg = `Question ${i + 1}, Part ${j + 1} (${p.type}): Missing answer.`;
                                 const errorMsgAr = `السؤال ${i + 1}, الجزء ${j + 1} (${p.type}): الإجابة مفقودة.`;
@@ -2235,7 +2248,9 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                 const lang = globalMetadata.language || this.customization.lang;
                 let processedStem = part.stem;
                 
-                if (processedStem && processedStem.includes('@BLANK')) {
+                // Only replace @BLANK with HTML span for GAP_TEXT questions
+                // For other question types, let processTextForHtml handle @BLANK in math contexts
+                if (part.type === this.QuestionType.GAP_TEXT && processedStem && processedStem.includes('@BLANK')) {
                     const spaceSpan = '<span data-node-type="blank-line" data-node-variation="space">&nbsp;</span>';
                     processedStem = processedStem.replace(/@BLANK/g, spaceSpan);
                 }
@@ -2263,9 +2278,6 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                         break;
                     case this.QuestionType.STRING:
                         Object.assign(partJson, this._transformStringPart(part, globalMetadata, lang));
-                        break;
-                    case this.QuestionType.FRQ:
-                        Object.assign(partJson, this._transformFRQPart(part, lang));
                         break;
                     case this.QuestionType.FRQ_AI:
                         Object.assign(partJson, this._transformFRQ_AIPart(part, globalMetadata, lang));
@@ -2389,9 +2401,6 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
 
 
             
-        _transformFRQPart(part, lang) {
-                return { choices: [], answer: this._formatAnswerHtml(part.answer, lang) };
-            }
             _transformFRQ_AIPart(part, globalMetadata, lang) {
                 const result = {
                     choices: [],
@@ -2446,7 +2455,6 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                 this.questions = []; this.jsonForExport = ''; this.csvData = [];
                 localStorage.removeItem('aiq_autosave_content');
                 localStorage.removeItem('aiq_csv_data');
-                localStorage.removeItem('aiq_ai_template_ids');
                 this.updateUIAfterChange();
                 const jsonOutput = document.getElementById('jsonOutput');
                 jsonOutput.style.display = 'none'; jsonOutput.innerHTML = '';
@@ -2531,7 +2539,8 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
             
             createMathField(equation, language, forceEn = false, questionId, partIndex, fieldType, choiceIndex, mathFieldIndex) {
                 const isArabic = language === this.Language.ARABIC && !forceEn;
-                let latexValue = equation.replace(/@BLANK/g, '\\textBlank');
+                // Handle @BLANK in math equations - use a visible blank space
+                let latexValue = equation.replace(/@BLANK/g, '\\text{____}');
                 if (isArabic && this.config.flags.convertArabicLatex) {
                     latexValue = this.convertToArabicLatex(latexValue);
                 }
@@ -2681,7 +2690,7 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                         let g1Html = (p.group1 || []).map((item, i) => `<div class="matching-item">${i+1}. ${this.processTextForHtml(item, lang, q.metadata.id, pIndex, 'group1', i)}</div>`).join('');
                         let g2Html = (p.group2 || []).map((item, i) => `<div class="matching-item">${String.fromCharCode(65 + i)}. ${this.processTextForHtml(item, lang, q.metadata.id, pIndex, 'group2', i)}</div>`).join('');
                         html += `<div class="matching-preview"><div class="matching-column"><strong>${this.language === this.Language.ARABIC ? 'القائمة أ' : 'List A'}</strong>${g1Html}</div><div class="matching-column"><strong>${this.language === this.Language.ARABIC ? 'القائمة ب' : 'List B'}</strong>${g2Html}</div></div>`;
-                    } else if (p.type === 'string' || p.type === 'frq' || p.type === 'frq_ai') {
+                    } else if (p.type === 'string' || p.type === 'frq_ai') {
                         html += `<div class="choice-item correct"><strong>${this.language === this.Language.ARABIC ? 'الإجابة:' : 'Answer:'}</strong> ${this.processTextForHtml(p.answer, lang, q.metadata.id, pIndex, 'answer')}</div>`;
                         
                         // Display guidelines for string questions if available
@@ -2766,15 +2775,34 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
             }
             updateStatistics() {
                 const total = this.questions.length;
-                let totalConfidence = 0;
-                this.questions.forEach(q => { totalConfidence += (q.metadata.confidence || 0.85); });
+                
+                // Update total questions count
                 document.getElementById('totalQuestions').textContent = total;
-                const avgConfidence = total > 0 ? (totalConfidence / total) : 0;
-                const confidencePercent = Math.round(avgConfidence * 100);
-                document.getElementById('confidenceScore').textContent = `${confidencePercent}%`;
-                document.getElementById('detectionQuality').style.width = `${confidencePercent}%`;
-                document.getElementById('classificationAccuracy').style.width = `${Math.round(avgConfidence * 95)}%`;
-                document.getElementById('dataCompleteness').style.width = `${Math.round(avgConfidence * 90)}%`;
+                
+                // Count questions by type
+                const typeCounts = {};
+                this.questions.forEach(question => {
+                    question.parts.forEach(part => {
+                        const type = this.questionTypeConfigs[part.type]?.label || part.type;
+                        typeCounts[type] = (typeCounts[type] || 0) + 1;
+                    });
+                });
+                
+                // Update question types stats
+                const statsContainer = document.getElementById('questionTypesStats');
+                if (total === 0) {
+                    statsContainer.innerHTML = '<div style="text-align: center; color: #6b7280; padding: 20px;">لا توجد أسئلة</div>';
+                } else {
+                    const statsHtml = Object.entries(typeCounts)
+                        .sort(([,a], [,b]) => b - a) // Sort by count descending
+                        .map(([type, count]) => `
+                            <div class="type-stat">
+                                <span class="type-name">${type}</span>
+                                <span class="type-count">${count}</span>
+                            </div>
+                        `).join('');
+                    statsContainer.innerHTML = statsHtml;
+                }
             }
             showMessage(text, type = 'success') {
                 const container = document.getElementById('messageContainer');
@@ -2786,6 +2814,13 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                 setTimeout(() => { messageDiv.remove(); }, 4000);
             }
             async copyJSON() {
+                // Check if Source ID is selected
+                const sourceIdSelect = document.getElementById('sourceIdSelect');
+                if (!sourceIdSelect || !sourceIdSelect.value || sourceIdSelect.value.trim() === '' || sourceIdSelect.value === 'none') {
+                    this.showMessage(this.language === this.Language.ARABIC ? 'يجب اختيار Source ID صحيح قبل نسخ JSON.' : 'Please select a valid Source ID before copying JSON.', 'error');
+                    return;
+                }
+                
                 if (!this.jsonForExport) {
                     this.showMessage(this.language === this.Language.ARABIC ? 'لا يوجد شيء لنسخه' : 'Nothing to copy', 'warning');
                     return;
@@ -2798,6 +2833,13 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                 }
             }
             downloadJSON() {
+                // Check if Source ID is selected
+                const sourceIdSelect = document.getElementById('sourceIdSelect');
+                if (!sourceIdSelect || !sourceIdSelect.value || sourceIdSelect.value.trim() === '' || sourceIdSelect.value === 'none') {
+                    this.showMessage(this.language === this.Language.ARABIC ? 'يجب اختيار Source ID صحيح قبل تحميل JSON.' : 'Please select a valid Source ID before downloading JSON.', 'error');
+                    return;
+                }
+                
                 if (!this.jsonForExport || this.questions.length > 1) {
                     this.showMessage(this.language === this.Language.ARABIC ? 'يمكن تحميل سؤال واحد فقط بصيغة JSON. استخدم ZIP للتحميل المجمع.' : 'Only one question can be downloaded as JSON. Use ZIP for bulk download.', 'warning');
                     return;
@@ -2808,6 +2850,13 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                 this.showMessage(this.language === this.Language.ARABIC ? 'بدء تحميل الملف...' : 'Download starting...', 'success');
             }
             async downloadZip() {
+                // Check if Source ID is selected
+                const sourceIdSelect = document.getElementById('sourceIdSelect');
+                if (!sourceIdSelect || !sourceIdSelect.value || sourceIdSelect.value.trim() === '' || sourceIdSelect.value === 'none') {
+                    this.showMessage(this.language === this.Language.ARABIC ? 'يجب اختيار Source ID صحيح قبل تحميل ZIP.' : 'Please select a valid Source ID before downloading ZIP.', 'error');
+                    return;
+                }
+                
                 if (this.questions.length === 0) {
                     this.showMessage(this.language === this.Language.ARABIC ? 'لا يوجد أسئلة لتحميلها' : 'No questions to download', 'warning');
                     return;
@@ -2853,15 +2902,14 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                 document.documentElement.lang = isAr ? 'ar' : 'en';
                 document.documentElement.dir = isAr ? 'rtl' : 'ltr';
                 const translations = {
-                    mainTitle: { ar: '🚀 محول الأسئلة الذكي المتطور', en: '🚀 Advanced Smart Question Converter' },
-                    mainSubtitle: { ar: 'حوّل نصوص الأسئلة إلى صيغة JSON متقدمة بضغطة زر', en: 'Convert question texts to advanced JSON format with one click' },
+                    mainTitle: { ar: '🚀 رافع الأسئلة المجمع', en: '🚀 Bulk Question Uploader' },
+                    mainSubtitle: { ar: 'رفع وتحويل مجموعات كبيرة من الأسئلة إلى صيغة JSON متقدمة', en: 'Upload and convert large batches of questions to advanced JSON format' },
                     panelTitle1: { ar: '<span style="font-size: 1.5em; line-height: 1;">①</span> اختر نوع السؤال (للنص البسيط)', en: '<span style="font-size: 1.5em; line-height: 1;">①</span> Select Type (for Simple Text)' },
                     panelTitle2: { ar: '<span style="font-size: 1.5em; line-height: 1;">②</span> أدخل النص', en: '<span style="font-size: 1.5em; line-height: 1;">②</span> Enter Text' },
-                    panelTitle3: { ar: '🔍 تحليل ومخرجات', en: '🔍 Analysis & Output' },
+                    statsTitle: { ar: '📊 إحصائيات الأسئلة', en: '📊 Question Statistics' },
                     panelTitle4: { ar: '👁️ معاينة الأسئلة', en: '👁️ Questions Preview' },
                     generateBtn: { ar: '🚀 توليد أسئلة', en: '🚀 Generate Questions' },
-                    analyzeBtn: { ar: '🤖 تحليل ذكي', en: '🤖 Smart Analyze' },
-                    cleanBtn: { ar: '✨ تنظيف وتنسيق', en: '✨ Clean & Format' },
+                    analyzeBtn: { ar: '👁️ عرض', en: '👁️ Preview' },
                     enhanceBtn: { ar: '💎 تحسين بالـ AI', en: '💎 Enhance with AI' },
                     convertBtn: { ar: '🔄 تحويل لـ JSON', en: '🔄 Convert to JSON' },
                     customizeBtn: { ar: '⚙️ تخصيص', en: '⚙️ Customize' },
@@ -2873,17 +2921,22 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                     downloadZipBtn: { ar: '🗜️ تحميل كـ ZIP', en: '🗜️ Download as ZIP' },
                     csvBtn: { ar: '📄 CSV', en: '📄 CSV' },
                     subjectTemplateBtn: { ar: '📚 Subject Template ID', en: '📚 Subject Template ID' },
+                    closeBtn: { ar: 'إغلاق', en: 'Close' },
+                    generationTitle: { ar: '🚀 توليد أسئلة بالذكاء الاصطناعي', en: '🚀 AI Question Generation' },
+                    enterContent: { ar: '① أدخل المحتوى', en: '① Enter Content' },
+                    selectSettings: { ar: '② حدد الإعدادات', en: '② Select Settings' },
+                    multiPartQuestion: { ar: 'سؤال متعدد الأجزاء', en: 'Multi-part Question' },
+                    addGuidelines: { ar: '③ (اختياري) أضف توجيهات خاصة', en: '③ (Optional) Add Special Guidelines' },
                 };
                 
                 document.getElementById('main-title').innerHTML = translations.mainTitle[this.language];
                 document.getElementById('main-subtitle').innerHTML = translations.mainSubtitle[this.language];
                 document.getElementById('panel-title-1').innerHTML = translations.panelTitle1[this.language];
                 document.getElementById('panel-title-2').innerHTML = translations.panelTitle2[this.language];
-                document.getElementById('panel-title-3').innerHTML = translations.panelTitle3[this.language];
+                document.getElementById('stats-title').innerHTML = translations.statsTitle[this.language];
                 document.getElementById('panel-title-4').innerHTML = translations.panelTitle4[this.language];
                 document.getElementById('generate-questions-btn').innerHTML = translations.generateBtn[this.language];
                 document.getElementById('smart-analyze-btn').innerHTML = translations.analyzeBtn[this.language];
-                document.getElementById('clean-format-btn').innerHTML = translations.cleanBtn[this.language];
                 document.getElementById('aiEnhanceBtn').innerHTML = translations.enhanceBtn[this.language];
                 document.getElementById('convert-json-btn').innerHTML = translations.convertBtn[this.language];
                 document.getElementById('customizeBtn').innerHTML = translations.customizeBtn[this.language];
@@ -2895,6 +2948,63 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                 document.getElementById('downloadZipBtn').innerHTML = translations.downloadZipBtn[this.language];
                 document.getElementById('csvBtn').innerHTML = translations.csvBtn[this.language];
                 document.getElementById('subjectTemplateBtn').innerHTML = translations.subjectTemplateBtn[this.language];
+                
+                // Update aria-labels dynamically
+                document.getElementById('generate-questions-btn').setAttribute('aria-label', translations.generateBtn[this.language]);
+                document.getElementById('smart-analyze-btn').setAttribute('aria-label', translations.analyzeBtn[this.language]);
+                document.getElementById('aiEnhanceBtn').setAttribute('aria-label', translations.enhanceBtn[this.language]);
+                document.getElementById('convert-json-btn').setAttribute('aria-label', translations.convertBtn[this.language]);
+                document.getElementById('customizeBtn').setAttribute('aria-label', translations.customizeBtn[this.language]);
+                document.getElementById('tagsBtn').setAttribute('aria-label', translations.tagsBtn[this.language]);
+                document.getElementById('clear-all-btn').setAttribute('aria-label', translations.clearBtn[this.language]);
+                document.getElementById('langSwitchBtn').setAttribute('aria-label', translations.langBtn[this.language]);
+                document.getElementById('copyBtn').setAttribute('aria-label', translations.copyBtn[this.language]);
+                document.getElementById('downloadBtn').setAttribute('aria-label', translations.downloadBtn[this.language]);
+                document.getElementById('downloadZipBtn').setAttribute('aria-label', translations.downloadZipBtn[this.language]);
+                document.getElementById('csvBtn').setAttribute('aria-label', translations.csvBtn[this.language]);
+                
+                // Update modal close buttons aria-labels
+                document.getElementById('customize-modal-close-btn').setAttribute('aria-label', translations.closeBtn[this.language]);
+                document.getElementById('tags-modal-close-btn').setAttribute('aria-label', translations.closeBtn[this.language]);
+                document.getElementById('csv-modal-close-btn').setAttribute('aria-label', translations.closeBtn[this.language]);
+                document.getElementById('subject-template-modal-close-btn').setAttribute('aria-label', translations.closeBtn[this.language]);
+                
+                // Update placeholders dynamically
+                const questionInputPlaceholder = this.language === this.Language.ARABIC ? 
+                    "أدخل محتوى السؤال هنا...\nسيتم تجاهل أي بيانات وصفية مثل id أو language (ما عدا type الذي سيضاف تلقائيًا).\nيمكنك استخدام تنسيقات مختلفة مثل:\n- أسئلة اختيار من متعدد (MCQ)\n- أسئلة النص القصير (String)\n- أسئلة مقالية (FRQ)\n- أسئلة ملء الفراغات (Gap Text)\n- أسئلة التوصيل (Matching)\n- أسئلة متعددة الأجزاء\n- وغيرها من الأنواع المدعومة" :
+                    "Enter question content here...\nAny metadata like id or language will be ignored (except type which will be added automatically).\nYou can use different formats like:\n- Multiple Choice Questions (MCQ)\n- Short Text Questions (String)\n- Essay Questions (FRQ)\n- Gap Fill Questions (Gap Text)\n- Matching Questions (Matching)\n- Multi-part Questions\n- And other supported types";
+                document.getElementById('questionInput').setAttribute('placeholder', questionInputPlaceholder);
+                
+                const apiKeyPlaceholder = this.language === this.Language.ARABIC ? 
+                    "🔑 أدخل مفتاح API هنا" : "🔑 Enter API key here";
+                document.getElementById('geminiApiKey').setAttribute('placeholder', apiKeyPlaceholder);
+                document.getElementById('openaiApiKey').setAttribute('placeholder', apiKeyPlaceholder);
+                
+                // Update Generation Modal elements
+                document.getElementById('generation-title').innerHTML = translations.generationTitle[this.language];
+                document.querySelector('.generation-column h4').innerHTML = translations.enterContent[this.language];
+                document.querySelector('.generation-column:nth-child(2) h4').innerHTML = translations.selectSettings[this.language];
+                document.querySelector('label[for="gen-multi-part-count"]').innerHTML = translations.multiPartQuestion[this.language];
+                document.querySelector('.generation-column:nth-child(2) h4:nth-of-type(2)').innerHTML = translations.addGuidelines[this.language];
+                
+                // Update Generation Modal placeholders
+                const genTextPlaceholder = this.language === this.Language.ARABIC ? 
+                    "الصق محتوى الدرس هنا..." : "Paste lesson content here...";
+                document.getElementById('gen-text-input').setAttribute('placeholder', genTextPlaceholder);
+                
+                const genMultiPartPlaceholder = this.language === this.Language.ARABIC ? 
+                    "أنواع الأجزاء (مثال: mcq, string)" : "Part types (example: mcq, string)";
+                document.getElementById('gen-multi-part-types').setAttribute('placeholder', genMultiPartPlaceholder);
+                
+                const genCustomPromptPlaceholder = this.language === this.Language.ARABIC ? 
+                    "مثال: ركز على المفاهيم الرئيسية، اجعل الأسئلة للمرحلة الإعدادية..." : "Example: Focus on key concepts, make questions for preparatory stage...";
+                document.getElementById('gen-custom-prompt').setAttribute('placeholder', genCustomPromptPlaceholder);
+                
+                // Update image drop zone text
+                const dropZoneText = this.language === this.Language.ARABIC ? 
+                    "اسحب وأفلت صورة هنا، أو انقر للاختيار" : "Drag and drop an image here, or click to select";
+                document.querySelector('#gen-image-drop-zone p').innerHTML = dropZoneText;
+                
                 this.displayResults();
             }
             openCustomizeModal() {
@@ -2944,24 +3054,22 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                 // Clear existing content and event listeners
                 select.innerHTML = '';
 
-                // Add default option
+                // Add default "none" option
                 const defaultOption = document.createElement('option');
-                defaultOption.value = this.config.defaults.sourceId;
-                defaultOption.textContent = "Default (mariam.ghonaim)";
+                defaultOption.value = '';
+                defaultOption.textContent = "none";
                 select.appendChild(defaultOption);
 
                 // Add all options from the sourceIdData array
                 this.sourceIdData.forEach(item => {
-                    if (item.source_id !== this.config.defaults.sourceId.toString()) { // Avoid duplicating the default
                         const option = document.createElement('option');
                         option.value = item.source_id;
                         option.textContent = item.name;
                         select.appendChild(option);
-                    }
                 });
 
-                // Set the saved value if available
-                select.value = this.customization.sourceId || this.config.defaults.sourceId;
+                // Set the saved value if available, otherwise default to "none"
+                select.value = this.customization.sourceId || '';
                 
                 // Add event listener directly to the select element
                 select.addEventListener('change', (e) => {
@@ -3046,66 +3154,6 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                     this.showMessage(this.language === this.Language.ARABIC ? 'تم حفظ بيانات CSV' : 'CSV data saved successfully', 'success');
                     this.closeCSVModal();
                     this.displayResults();
-                }
-            }
-            openAiTemplateModal() {
-                this._lastFocus = document.activeElement;
-                if (typeof Handsontable === 'undefined') { this.showMessage('Error: Table library not loaded.', 'error'); return; }
-                if (this.questions.length === 0) { this.showMessage(this.language === this.Language.ARABIC ? 'الرجاء تحليل الأسئلة أولاً.' : 'Please analyze questions first.', 'warning'); return; }
-                
-                const columns = [
-                    { data: 'Question Id', type: 'text', readOnly: true },
-                    { data: 'AI Template ID', type: 'text' }
-                ];
-                
-                const data = this.questions.map(q => ({
-                    'Question Id': q.metadata.id,
-                    'AI Template ID': q.metadata.ai_template_id || ''
-                }));
-
-                document.getElementById('aiTemplateModalBg').style.display = 'flex';
-                setTimeout(() => { document.getElementById('ai-template-save-btn')?.focus(); }, 0);
-                if (this.aiTemplateHotInstance) this.aiTemplateHotInstance.destroy();
-                
-                this.aiTemplateHotInstance = new Handsontable(document.getElementById('hotAiTemplateTable'), {
-                    data: data,
-                    colHeaders: ['Question ID', 'AI Template ID'],
-                    columns: columns,
-                    rowHeaders: true,
-                    width: '100%',
-                    height: 500,
-                    licenseKey: 'non-commercial-and-evaluation',
-                    manualColumnResize: true,
-                    stretchH: 'all'
-                });
-            }
-            closeAiTemplateModal() {
-                document.getElementById('aiTemplateModalBg').style.display = 'none';
-                if (this.aiTemplateHotInstance) {
-                    this.aiTemplateHotInstance.destroy();
-                    this.aiTemplateHotInstance = null;
-                }
-                if (this._lastFocus && typeof this._lastFocus.focus === 'function') { this._lastFocus.focus(); }
-            }
-            saveAiTemplateData() {
-                if (this.aiTemplateHotInstance) {
-                    const tableData = this.aiTemplateHotInstance.getData();
-                    tableData.forEach((row) => {
-                        const originalId = row[0];
-                        const aiTemplateId = row[1];
-                        const question = this.questions.find(q => q.metadata.id === originalId);
-                        if (question) {
-                            question.metadata.ai_template_id = aiTemplateId || null;
-                            question.parts.forEach(p => {
-                                p.metadata.ai_template_id = aiTemplateId || null;
-                            });
-                        }
-                    });
-                    this.showMessage(this.language === this.Language.ARABIC ? 'تم حفظ معرفات قوالب AI بنجاح' : 'AI Template IDs saved successfully', 'success');
-                    this.closeAiTemplateModal();
-                    if (document.getElementById('jsonOutput').style.display === 'block') {
-                        this.convertToJSON();
-                    }
                 }
             }
             _formatCsvCell(value) {
@@ -3276,7 +3324,6 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                     { name: 'Gap Text', hint: 'ملء فراغات: اكتب الجمل وضع الفراغات واملأ @GAPS', content: 'type: gapText\n@STEM\nاكتب النص مع [فراغ] هنا\n@BLANK\n@GAPS\nالإجابة 1\nالإجابة 2\n---\n' },
                     { name: 'String', hint: 'نص قصير كإجابة', content: 'type: string\n@STEM\nاكتب نص السؤال هنا\n\n@ANSWER\nالإجابة القصيرة هنا\n---\n' },
                     { name: 'String (AI)', hint: 'نص قصير مع إرشادات ذكاء اصطناعي لتقييم إجابات متعددة مع درجات وتعليقات', content: 'type: string\nai_template_id: 593158513739\n@STEM\nاكتب نص السؤال هنا\n\n@ANSWER\nالإجابة القصيرة هنا\n\n@GUIDELINES\nإجابة الطالب 1 - 1 - تعليق على الإجابة 1\nإجابة الطالب 2 - 0 - تعليق على الإجابة 2\n---\n' },
-                    { name: 'FRQ', hint: 'إجابة طويلة (مقالي)', content: 'type: frq\n@STEM\nاكتب نص السؤال هنا\n\n@ANSWER\nاكتب الإجابة النموذجية هنا\n---\n' },
                     { name: 'FRQ (AI)', hint: 'إجابة مقالية يتم تقييمها بالذكاء الاصطناعي', content: 'type: frq_ai\nai_template_id: 593158513739\n@STEM\nاكتب نص السؤال هنا\n\n@ANSWER\nإجابة نموذجية مختصرة\n---\n' },
                     { name: 'Input Box', hint: 'قيمة + وحدة مفصولة بـ |', content: 'type: input_box\n@STEM\nاكتب نص السؤال هنا\n\n@ANSWER\n12 | cm\n---\n' },
                     { name: 'Multi-Part', hint: 'سؤال متعدد الأجزاء باستخدام @STATEMENT و @PART', content: '@STATEMENT\nمقدمة السؤال العامة\n@PART\ntype: mcq\n@STEM\nنص الجزء الأول\n@CHOICES\n* صحيح\n- خطأ\n@PART\ntype: string\n@STEM\nنص الجزء الثاني\n@ANSWER\nالإجابة هنا\n---\n' },
@@ -3286,7 +3333,7 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                 const tags = [
                     { tag: '@STEM', hint: 'نص السؤال الرئيسي' },
                     { tag: '@CHOICES', hint: 'قائمة الاختيارات (عنصر في كل سطر)' },
-                    { tag: '@ANSWER', hint: 'الإجابة (String/FRQ/FRQ_AI/Input Box)' },
+                    { tag: '@ANSWER', hint: 'الإجابة (String/FRQ_AI/Input Box)' },
                     { tag: '@GAPS', hint: 'إجابات ملء الفراغات (كل إجابة في سطر)' },
                     { tag: '@MATCHING_PAIRS', hint: 'أزواج المطابقة (افصل بينها بـ |)' },
                     { tag: '@GUIDELINES', hint: 'تعليمات التصحيح لأسئلة String (إجابة الطالب - علامة - تعليق)' },
@@ -3301,7 +3348,6 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                     { tag: 'type: matching', hint: 'تحديد نوع الجزء: Matching' },
                     { tag: 'type: gapText', hint: 'تحديد نوع الجزء: Gap Text' },
                     { tag: 'type: string', hint: 'تحديد نوع الجزء: String' },
-                    { tag: 'type: frq', hint: 'تحديد نوع الجزء: FRQ' },
                     { tag: 'type: frq_ai', hint: 'تحديد نوع الجزء: FRQ (AI)' },
                     { tag: 'type: input_box', hint: 'تحديد نوع الجزء: Input Box' },
                     { tag: '[U]', hint: 'وضع خط تحت النص: [U]النص[/U]' },
@@ -3396,22 +3442,96 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                 const textarea = document.getElementById('questionInput');
                 let text = textarea.value;
                 
-                // This is a very basic formatter and might not work for all cases.
-                // It looks for a line of text followed by a numbered/lettered list.
-                const questionRegex = /^(.*?)[\n\r]+((?:[a-zA-Z\u0623-\u064A0-9]+[.)]\s*.*[\n\r]*)+)/gm;
+                // Basic formatter that tries to detect and format different question types
+                const lines = text.split(/[\n\r]+/).map(l => l.trim()).filter(l => l);
                 
-                const formattedText = text.replace(questionRegex, (match, stem, choices) => {
-                    const choiceLines = choices.trim().split(/[\n\r]+/).map(line => {
-                        // Remove the leading bullet/number (e.g., "a)", "1.", etc.)
-                        return '- ' + line.replace(/^[a-zA-Z\u0623-\u064A0-9]+[.)]\s*/, '').trim();
-                    }).join('\n');
+                if (lines.length === 0) {
+                    this.showMessage('لا يوجد نص لتنسيقه.', 'warning');
+                    return;
+                }
+                
+                let formattedText = '';
+                let currentStem = '';
+                let currentChoices = [];
+                let inQuestion = false;
+                
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i];
                     
-                    return `type: mcq\n@STEM\n${stem.trim()}\n@CHOICES\n${choiceLines}\n---`;
-                });
-
-                textarea.value = formattedText;
-                this.showMessage('تمت محاولة تنظيف وتنسيق النص.', 'success');
+                    // Check if this is a choice line (starts with a), 1), أ), etc.)
+                    const isChoice = /^([a-zA-Z\u0623-\u064A0-9])[.)]\s*(.+)/.test(line);
+                    
+                    if (isChoice) {
+                        // Extract choice text
+                        const choiceText = line.replace(/^[a-zA-Z\u0623-\u064A0-9]+[.)]\s*/, '').trim();
+                        currentChoices.push(choiceText);
+                        inQuestion = true;
+                    } else {
+                        // Not a choice line
+                        if (inQuestion && currentChoices.length > 0) {
+                            // We have collected a question, format it
+                            formattedText += this._formatQuestion(currentStem, currentChoices);
+                            currentStem = '';
+                            currentChoices = [];
+                            inQuestion = false;
+                        }
+                        
+                        // This line is part of the stem
+                        if (currentStem) currentStem += ' ';
+                        currentStem += line;
+                    }
+                }
+                
+                // Handle the last question if any
+                if (currentChoices.length > 0) {
+                    formattedText += this._formatQuestion(currentStem, currentChoices);
+                }
+                
+                if (!formattedText) {
+                    // No structured questions found, just clean up the text
+                    formattedText = lines.join('\n');
+                    this.showMessage('لم يتم العثور على نمط أسئلة معروف. تم تنظيف النص فقط.', 'info');
+                } else {
+                    this.showMessage('تم تنسيق النص بنجاح.', 'success');
+                }
+                
+                this.setInputText(formattedText.trim());
                 this.runLiveValidation();
+            }
+            
+            _formatQuestion(stem, choices) {
+                // Auto-detect question type based on active type or default to MCQ
+                const type = this.activeQuestionType !== this.QuestionType.UNKNOWN ? 
+                    this.questionTypeConfigs[this.activeQuestionType]?.jsonType || 'mcq' : 'mcq';
+                
+                let formatted = `type: ${type}\n@STEM\n${stem.trim()}\n`;
+                
+                // Format choices based on question type
+                if (type === 'mcq' || type === 'mrq' || type === 'oq') {
+                    formatted += '@CHOICES\n';
+                    choices.forEach(choice => {
+                        formatted += `- ${choice}\n`;
+                    });
+                } else if (type === 'matching') {
+                    formatted += '@CHOICES\n';
+                    const half = Math.ceil(choices.length / 2);
+                    for (let i = 0; i < half; i++) {
+                        formatted += `- ${choices[i]}\n`;
+                    }
+                    formatted += '@PAIRS\n';
+                    for (let i = half; i < choices.length; i++) {
+                        formatted += `- ${choices[i]}\n`;
+                    }
+                } else {
+                    // For other types, just add choices as is
+                    formatted += '@CHOICES\n';
+                    choices.forEach(choice => {
+                        formatted += `- ${choice}\n`;
+                    });
+                }
+                
+                formatted += '---\n';
+                return formatted;
             }
 
             runLiveValidation() {
@@ -3431,31 +3551,139 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                 // Get valid question types
                 const validTypes = Object.values(this.QuestionType).filter(t => t !== this.QuestionType.UNKNOWN);
                 
-                for (const part of q.parts) {
+                // Check Source ID selection (only during export validation)
+                if (this.questions.length > 0) { // Only check during export, not during live validation
+                    const sourceIdSelect = document.getElementById('sourceIdSelect');
+                    if (!sourceIdSelect || !sourceIdSelect.value || sourceIdSelect.value.trim() === '' || sourceIdSelect.value === 'none') {
+                        return this.language === this.Language.ARABIC ? 
+                            'يجب اختيار Source ID صحيح قبل التصدير.' : 
+                            'Please select a valid Source ID before export.';
+                    }
+                }
+                
+                // Validate metadata (if present in export format)
+                if (q.metadata) {
+                    // Check required metadata fields
+                    if (!q.metadata.id) {
+                        return this.language === this.Language.ARABIC ? 
+                            'Metadata: حقل id مطلوب.' : 
+                            'Metadata: Missing required field "id".';
+                    }
+                    
+                    // Validate category
+                    if (q.metadata.category && !['lesson', 'exam'].includes(q.metadata.category)) {
+                        return this.language === this.Language.ARABIC ? 
+                            `Metadata: category يجب أن يكون "lesson" أو "exam".` : 
+                            `Metadata: Invalid category "${q.metadata.category}". Must be "lesson" or "exam".`;
+                    }
+                    
+                    // Validate country
+                    if (q.metadata.country && q.metadata.country !== 'eg') {
+                        return this.language === this.Language.ARABIC ? 
+                            'Metadata: country يجب أن يكون "eg".' : 
+                            'Metadata: country must be "eg".';
+                    }
+                    
+                    // Validate source_id structure
+                    if (q.metadata.source_id && (typeof q.metadata.source_id !== 'object' || !q.metadata.source_id.value)) {
+                        return this.language === this.Language.ARABIC ? 
+                            'Metadata: source_id يجب أن يكون object يحتوي على value.' : 
+                            'Metadata: source_id must be an object with a "value" key.';
+                    }
+                    
+                    // Validate dialect
+                    if (q.metadata.dialect && (!Array.isArray(q.metadata.dialect) || q.metadata.dialect.length === 0)) {
+                        return this.language === this.Language.ARABIC ? 
+                            'Metadata: dialect يجب أن يكون array غير فارغ.' : 
+                            'Metadata: dialect must be a non-empty array.';
+                    }
+                }
+                
+                // Validate multipart statement
+                if (q.parts && q.parts.length > 1 && !q.statement) {
+                    return this.language === this.Language.ARABIC ? 
+                        'الأسئلة متعددة الأجزاء يجب أن تحتوي على حقل statement.' : 
+                        'Multipart questions must have a "statement" field.';
+                }
+                
+                for (let partIndex = 0; partIndex < q.parts.length; partIndex++) {
+                    const part = q.parts[partIndex];
+                    const partNum = partIndex + 1;
+                    
+                    // Validate part number 'n' (if present in export format)
+                    if (part.n !== undefined && part.n !== partNum) {
+                        return this.language === this.Language.ARABIC ? 
+                            `Part ${partNum}: رقم الـ part 'n' (${part.n}) لا يطابق موضعه (${partNum}).` : 
+                            `Part ${partNum}: Part number 'n' (${part.n}) does not match its position (${partNum}).`;
+                    }
+                    
+                    // Validate stem (if present)
+                    if (part.stem !== undefined && (typeof part.stem !== 'string' || part.stem.trim() === '')) {
+                        return this.language === this.Language.ARABIC ? 
+                            `Part ${partNum}: حقل stem يجب أن يكون string غير فارغ.` : 
+                            `Part ${partNum}: 'stem' must be a non-empty string.`;
+                    }
+                    
+                    // Validate standalone (if present)
+                    if (part.standalone !== undefined && typeof part.standalone !== 'boolean') {
+                        return this.language === this.Language.ARABIC ? 
+                            `Part ${partNum}: حقل standalone يجب أن يكون boolean.` : 
+                            `Part ${partNum}: 'standalone' must be a boolean.`;
+                    }
+                    
+                    // Validate subtype (if present)
+                    if (part.subtype !== undefined && part.subtype !== null) {
+                        return this.language === this.Language.ARABIC ? 
+                            `Part ${partNum}: حقل subtype يجب أن يكون null.` : 
+                            `Part ${partNum}: 'subtype' must be null.`;
+                    }
+                    
                     // Check if type is valid
                     if (!part.type || part.type === this.QuestionType.UNKNOWN || !validTypes.includes(part.type)) {
                         const validTypesStr = validTypes.join(', ');
                         return this.language === this.Language.ARABIC 
-                            ? `نوع السؤال "${part.type}" غير صحيح. الأنواع المسموح بها: ${validTypesStr}` 
-                            : `Invalid question type "${part.type}". Valid types: ${validTypesStr}`;
+                            ? `Part ${partNum}: نوع السؤال "${part.type}" غير صحيح. الأنواع المسموح بها: ${validTypesStr}` 
+                            : `Part ${partNum}: Invalid question type "${part.type}". Valid types: ${validTypesStr}`;
                     }
                     
-                    // Check choices validation
-                    const needsChoices = [this.QuestionType.OQ, this.QuestionType.MCQ, this.QuestionType.MRQ].includes(part.type);
-                    if (needsChoices && part.choices) {
-                        // Check minimum number of choices
+                    // ===== MCQ Validation =====
+                    if (part.type === this.QuestionType.MCQ) {
+                        if (!part.choices || !Array.isArray(part.choices) || part.choices.length === 0) {
+                            return this.language === this.Language.ARABIC ? 
+                                `Part ${partNum} (mcq): choices يجب أن يكون array غير فارغ.` : 
+                                `Part ${partNum} (mcq): 'choices' must be a non-empty array.`;
+                        }
+                        
+                        // Validate choice structure (if choices are objects with type/html_content)
+                        const hasChoiceStructure = part.choices.length > 0 && typeof part.choices[0] === 'object' && part.choices[0].type;
+                        if (hasChoiceStructure) {
+                            const keyChoices = part.choices.filter(c => c.type === 'key');
+                            if (keyChoices.length !== 1) {
+                                return this.language === this.Language.ARABIC ? 
+                                    `Part ${partNum} (mcq): يجب أن يحتوي على choice واحد من نوع "key"، وُجد ${keyChoices.length}.` : 
+                                    `Part ${partNum} (mcq): Must have exactly 1 key choice, found ${keyChoices.length}.`;
+                            }
+                            
+                            // Validate each choice
+                            for (let i = 0; i < part.choices.length; i++) {
+                                const choice = part.choices[i];
+                                const choiceError = this.validateChoice(choice, partNum, i + 1);
+                                if (choiceError) return choiceError;
+                            }
+                        } else {
+                            // Simple string choices validation
                         if (part.choices.length < 2) {
                             return this.language === this.Language.ARABIC 
-                                ? `يجب أن يحتوي على اختيارين على الأقل.` 
-                                : `Must have at least 2 choices.`;
+                                    ? `Part ${partNum}: يجب أن يحتوي على اختيارين على الأقل.` 
+                                    : `Part ${partNum}: Must have at least 2 choices.`;
                         }
                         
                         // Check for empty choices
                         const emptyChoices = part.choices.filter(c => !c || c.trim() === '');
                         if (emptyChoices.length > 0) {
                             return this.language === this.Language.ARABIC 
-                                ? `يحتوي على اختيارات فارغة.` 
-                                : `Contains empty choices.`;
+                                    ? `Part ${partNum}: يحتوي على اختيارات فارغة.` 
+                                    : `Part ${partNum}: Contains empty choices.`;
                         }
                         
                         // Check for duplicate choices
@@ -3463,58 +3691,170 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                         const duplicates = trimmedChoices.filter((item, index) => trimmedChoices.indexOf(item) !== index);
                         if (duplicates.length > 0) {
                             return this.language === this.Language.ARABIC 
-                                ? `يحتوي على اختيارات متطابقة.` 
-                                : `Contains duplicate choices.`;
+                                    ? `Part ${partNum}: يحتوي على اختيارات متطابقة.` 
+                                    : `Part ${partNum}: Contains duplicate choices.`;
                         }
                     }
                     
-                    if (part.type === this.QuestionType.MCQ) {
                         if (!Array.isArray(part.answer) && part.answer === undefined) {
-                            return 'سؤال الاختيار من متعدد يجب أن يحتوي على إجابة صحيحة واحدة (*).';
+                            return `Part ${partNum}: سؤال الاختيار من متعدد يجب أن يحتوي على إجابة صحيحة واحدة (*).`;
                         }
                         // Check answer is within range
                         if (part.choices && part.answer !== undefined && (part.answer < 0 || part.answer >= part.choices.length)) {
                             return this.language === this.Language.ARABIC 
-                                ? `رقم الإجابة خارج النطاق المسموح.` 
-                                : `Answer index out of range.`;
+                                ? `Part ${partNum}: رقم الإجابة خارج النطاق المسموح.` 
+                                : `Part ${partNum}: Answer index out of range.`;
                         }
                     }
                     
+                    // ===== MRQ Validation =====
                     if (part.type === this.QuestionType.MRQ) {
+                        if (!part.choices || !Array.isArray(part.choices) || part.choices.length === 0) {
+                            return this.language === this.Language.ARABIC ? 
+                                `Part ${partNum} (mrq): choices يجب أن يكون array غير فارغ.` : 
+                                `Part ${partNum} (mrq): 'choices' must be a non-empty array.`;
+                        }
+                        
+                        // Validate choice structure
+                        const hasChoiceStructure = part.choices.length > 0 && typeof part.choices[0] === 'object' && part.choices[0].type;
+                        if (hasChoiceStructure) {
+                            const keyChoices = part.choices.filter(c => c.type === 'key');
+                            if (keyChoices.length < 2) {
+                                return this.language === this.Language.ARABIC ? 
+                                    `Part ${partNum} (mrq): يجب أن يحتوي على 2 choices من نوع "key" على الأقل، وُجد ${keyChoices.length}.` : 
+                                    `Part ${partNum} (mrq): Must have at least 2 key choices, found ${keyChoices.length}.`;
+                            }
+                            
+                            // Validate each choice
+                            for (let i = 0; i < part.choices.length; i++) {
+                                const choice = part.choices[i];
+                                const choiceError = this.validateChoice(choice, partNum, i + 1);
+                                if (choiceError) return choiceError;
+                            }
+                        } else {
+                            // Simple validation for string choices
+                            if (part.choices.length < 2) {
+                                return this.language === this.Language.ARABIC 
+                                    ? `Part ${partNum}: يجب أن يحتوي على اختيارين على الأقل.` 
+                                    : `Part ${partNum}: Must have at least 2 choices.`;
+                            }
+                        }
+                        
                         // Check has at least one answer
                         if (!Array.isArray(part.answer) || part.answer.length === 0) {
                             return this.language === this.Language.ARABIC 
-                                ? `يجب أن يحتوي على إجابة صحيحة واحدة على الأقل (*).` 
-                                : `Must have at least one correct answer.`;
+                                ? `Part ${partNum}: يجب أن يحتوي على إجابة صحيحة واحدة على الأقل (*).` 
+                                : `Part ${partNum}: Must have at least one correct answer.`;
                         }
                         // Check has more than one correct answer
                         if (part.answer.length === 1) {
                             return this.language === this.Language.ARABIC 
-                                ? `يحتوي على إجابة صحيحة واحدة فقط. يفضل استخدام MCQ بدلاً منه.` 
-                                : `Has only one correct answer. Consider using MCQ instead.`;
+                                ? `Part ${partNum}: يحتوي على إجابة صحيحة واحدة فقط. يفضل استخدام MCQ بدلاً منه.` 
+                                : `Part ${partNum}: Has only one correct answer. Consider using MCQ instead.`;
                         }
                         // Check answer indices are within range
                         if (part.choices) {
                             const invalidIndices = part.answer.filter(idx => idx < 0 || idx >= part.choices.length);
                             if (invalidIndices.length > 0) {
                                 return this.language === this.Language.ARABIC 
-                                    ? `بعض أرقام الإجابات خارج النطاق المسموح.` 
-                                    : `Some answer indices out of range.`;
+                                    ? `Part ${partNum}: بعض أرقام الإجابات خارج النطاق المسموح.` 
+                                    : `Part ${partNum}: Some answer indices out of range.`;
                             }
                         }
                     }
                     
+                    // ===== OQ (Ordering) Validation =====
                     if (part.type === this.QuestionType.OQ) {
-                        if (!part.choices || part.choices.length < 2) {
+                        if (!part.choices || !Array.isArray(part.choices) || part.choices.length < 2) {
                             return this.language === this.Language.ARABIC 
-                                ? `يجب أن يحتوي على عنصرين على الأقل للترتيب.` 
-                                : `Must have at least 2 items to order.`;
+                                ? `Part ${partNum} (oq): يجب أن يحتوي على عنصرين على الأقل للترتيب.` 
+                                : `Part ${partNum} (oq): Must have at least 2 items to order.`;
+                        }
+                        
+                        // Validate all choices are "distractor" type
+                        const hasChoiceStructure = part.choices.length > 0 && typeof part.choices[0] === 'object' && part.choices[0].type;
+                        if (hasChoiceStructure) {
+                            const nonDistractorChoices = part.choices.filter(c => c.type !== 'distractor');
+                            if (nonDistractorChoices.length > 0) {
+                                return this.language === this.Language.ARABIC ? 
+                                    `Part ${partNum} (oq): كل الاختيارات يجب أن تكون من نوع "distractor".` : 
+                                    `Part ${partNum} (oq): All choices must have type "distractor".`;
+                            }
+                            
+                            // Validate each choice
+                            for (let i = 0; i < part.choices.length; i++) {
+                                const choice = part.choices[i];
+                                const choiceError = this.validateChoice(choice, partNum, i + 1);
+                                if (choiceError) return choiceError;
+                            }
+                        }
+                        
+                        // Validate direction
+                        if (part.direction && !['vertical', 'horizontal'].includes(part.direction)) {
+                            return this.language === this.Language.ARABIC ? 
+                                `Part ${partNum} (oq): direction يجب أن يكون "vertical" أو "horizontal".` : 
+                                `Part ${partNum} (oq): 'direction' must be "vertical" or "horizontal".`;
                         }
                     }
                     
+                    // ===== GMRQ Validation =====
+                    if (part.type === this.QuestionType.GMRQ) {
+                        if (!part.choices || !Array.isArray(part.choices) || part.choices.length === 0) {
+                            return this.language === this.Language.ARABIC ? 
+                                `Part ${partNum} (gmrq): choices يجب أن يكون array غير فارغ.` : 
+                                `Part ${partNum} (gmrq): 'choices' must be a non-empty array.`;
+                        }
+                        
+                        // Count groups (assuming choices have a 'group' property)
+                        const groups = {};
+                        part.choices.forEach(c => {
+                            const group = c.group || 1;
+                            if (!groups[group]) groups[group] = [];
+                            groups[group].push(c);
+                        });
+                        
+                        const groupCount = Object.keys(groups).length;
+                        if (groupCount !== 2) {
+                            return this.language === this.Language.ARABIC ? 
+                                `Part ${partNum} (gmrq): يجب أن يحتوي على مجموعتين بالضبط، وُجد ${groupCount}.` : 
+                                `Part ${partNum} (gmrq): Must have exactly 2 groups, found ${groupCount}.`;
+                        }
+                        
+                        // Validate each group has exactly 1 key choice
+                        for (const [groupNum, groupChoices] of Object.entries(groups)) {
+                            const keyChoices = groupChoices.filter(c => c.type === 'key');
+                            if (keyChoices.length !== 1) {
+                                return this.language === this.Language.ARABIC ? 
+                                    `Part ${partNum} (gmrq): المجموعة ${groupNum} يجب أن تحتوي على choice واحد من نوع "key"، وُجد ${keyChoices.length}.` : 
+                                    `Part ${partNum} (gmrq): Group ${groupNum} must have exactly 1 key choice, found ${keyChoices.length}.`;
+                            }
+                        }
+                    }
+                    
+                    // ===== Opinion Validation =====
+                    if (part.type === this.QuestionType.OPINION) {
+                        if (!part.choices || !Array.isArray(part.choices) || part.choices.length === 0) {
+                            return this.language === this.Language.ARABIC ? 
+                                `Part ${partNum} (opinion): choices يجب أن يكون array غير فارغ.` : 
+                                `Part ${partNum} (opinion): 'choices' must be a non-empty array.`;
+                        }
+                        
+                        // Validate all choices are "distractor" type
+                        const hasChoiceStructure = part.choices.length > 0 && typeof part.choices[0] === 'object' && part.choices[0].type;
+                        if (hasChoiceStructure) {
+                            const nonDistractorChoices = part.choices.filter(c => c.type !== 'distractor');
+                            if (nonDistractorChoices.length > 0) {
+                                return this.language === this.Language.ARABIC ? 
+                                    `Part ${partNum} (opinion): كل الاختيارات يجب أن تكون من نوع "distractor".` : 
+                                    `Part ${partNum} (opinion): All choices must have type "distractor".`;
+                            }
+                        }
+                    }
+                    
+                    // ===== MATCHING Validation =====
                     if (part.type === this.QuestionType.MATCHING) {
                         if (!part.pairs || part.pairs.some(p => p.length !== 2)) {
-                            return 'كل سطر في سؤال التوصيل يجب أن يحتوي على عنصرين يفصل بينهما "|".';
+                            return `Part ${partNum}: كل سطر في سؤال التوصيل يجب أن يحتوي على عنصرين يفصل بينهما "|".`;
                         }
                         
                         // Check for duplicate items on left side
@@ -3523,8 +3863,8 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                             const duplicateLeft = leftItems.filter((item, index) => leftItems.indexOf(item) !== index);
                             if (duplicateLeft.length > 0) {
                                 return this.language === this.Language.ARABIC 
-                                    ? `عناصر مكررة في الجانب الأيسر.` 
-                                    : `Duplicate items on left side.`;
+                                    ? `Part ${partNum}: عناصر مكررة في الجانب الأيسر.` 
+                                    : `Part ${partNum}: Duplicate items on left side.`;
                             }
                             
                             // Check for duplicate items on right side
@@ -3532,8 +3872,8 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                             const duplicateRight = rightItems.filter((item, index) => rightItems.indexOf(item) !== index);
                             if (duplicateRight.length > 0) {
                                 return this.language === this.Language.ARABIC 
-                                    ? `عناصر مكررة في الجانب الأيمن.` 
-                                    : `Duplicate items on right side.`;
+                                    ? `Part ${partNum}: عناصر مكررة في الجانب الأيمن.` 
+                                    : `Part ${partNum}: Duplicate items on right side.`;
                             }
                             
                             // Check for duplicate pairs
@@ -3541,25 +3881,110 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                             const duplicatePairs = pairStrings.filter((item, index) => pairStrings.indexOf(item) !== index);
                             if (duplicatePairs.length > 0) {
                                 return this.language === this.Language.ARABIC 
-                                    ? `أزواج متطابقة تماماً.` 
-                                    : `Duplicate pairs found.`;
+                                    ? `Part ${partNum}: أزواج متطابقة تماماً.` 
+                                    : `Part ${partNum}: Duplicate pairs found.`;
+                            }
+                        }
+                        
+                        // Validate choices structure if present
+                        if (part.choices && Array.isArray(part.choices)) {
+                            const hasChoiceStructure = part.choices.length > 0 && typeof part.choices[0] === 'object' && part.choices[0].type;
+                            if (hasChoiceStructure) {
+                                // Count groups
+                                const groups = {};
+                                part.choices.forEach(c => {
+                                    const group = c.group || 1;
+                                    if (!groups[group]) groups[group] = [];
+                                    groups[group].push(c);
+                                });
+                                
+                                const groupCount = Object.keys(groups).length;
+                                if (groupCount !== 2) {
+                                    return this.language === this.Language.ARABIC ? 
+                                        `Part ${partNum} (matching): يجب أن يحتوي على مجموعتين بالضبط، وُجد ${groupCount}.` : 
+                                        `Part ${partNum} (matching): Must have exactly 2 groups, found ${groupCount}.`;
+                                }
+                                
+                                // Validate all are distractor
+                                const nonDistractorChoices = part.choices.filter(c => c.type !== 'distractor');
+                                if (nonDistractorChoices.length > 0) {
+                                    return this.language === this.Language.ARABIC ? 
+                                        `Part ${partNum} (matching): كل الاختيارات يجب أن تكون من نوع "distractor".` : 
+                                        `Part ${partNum} (matching): All choices must have type "distractor".`;
+                                }
                             }
                         }
                     }
                     
+                    
+                    // ===== GAP_TEXT Validation =====
                     if (part.type === this.QuestionType.GAP_TEXT) {
+                        if (part.choices && (!Array.isArray(part.choices) || part.choices.length > 0)) {
+                            return this.language === this.Language.ARABIC ? 
+                                `Part ${partNum} (gapText): choices يجب أن يكون array فارغ.` : 
+                                `Part ${partNum} (gapText): 'choices' must be an empty array.`;
+                        }
+                        
                         // Check @BLANK exists
                         if (!part.stem || !part.stem.includes('@BLANK')) {
                             return this.language === this.Language.ARABIC 
-                                ? `@BLANK مفقود في نص السؤال.` 
-                                : `Missing @BLANK in stem.`;
+                                ? `Part ${partNum} (gapText): @BLANK مفقود في نص السؤال.` 
+                                : `Part ${partNum} (gapText): Missing @BLANK in stem.`;
+                        }
+                        
+                        // Validate answers (which will become gap_text_keys)
+                        if (!part.answers || !Array.isArray(part.answers) || part.answers.length === 0) {
+                            return this.language === this.Language.ARABIC ? 
+                                `Part ${partNum} (gapText): answers يجب أن يكون array غير فارغ.` : 
+                                `Part ${partNum} (gapText): 'answers' must be a non-empty array.`;
+                        }
+                        
+                        // Validate each answer
+                        for (let i = 0; i < part.answers.length; i++) {
+                            const answer = part.answers[i];
+                            if (!answer.value) {
+                            return this.language === this.Language.ARABIC ? 
+                                    `Part ${partNum} (gapText): answer في الموضع ${i + 1} يجب أن يحتوي على خاصية value.` : 
+                                    `Part ${partNum} (gapText): answer at index ${i + 1} must have a 'value' property.`;
+                            }
+                            
+                            if (answer.order !== undefined && (typeof answer.order !== 'number' || answer.order <= 0)) {
+                                return this.language === this.Language.ARABIC ? 
+                                    `Part ${partNum} (gapText): order في الموضع ${i + 1} يجب أن يكون رقم موجب.` : 
+                                    `Part ${partNum} (gapText): 'order' at index ${i + 1} must be a positive number.`;
+                            }
                         }
                     }
-                    if (part.type === this.QuestionType.STRING && part.guidelines) {
-                        if (!Array.isArray(part.guidelines)) {
+                    
+                    // ===== STRING Validation =====
+                    if (part.type === this.QuestionType.STRING) {
+                        if (part.choices !== null && part.choices !== undefined) {
                             return this.language === this.Language.ARABIC ? 
-                                'صيغة الإرشادات غير صالحة لسؤال النص.' : 
-                                'Invalid guidelines format for string question.';
+                                `Part ${partNum} (string): choices يجب أن يكون null.` : 
+                                `Part ${partNum} (string): 'choices' must be null.`;
+                        }
+                        
+                        // For STRING questions, answer should be a string during parsing stage
+                        if (part.answer && typeof part.answer !== 'string') {
+                            return this.language === this.Language.ARABIC ? 
+                                `Part ${partNum} (string): answer يجب أن يكون string.` : 
+                                `Part ${partNum} (string): 'answer' must be a string.`;
+                        }
+                        
+                        if (part.answer) {
+                            // Check for HTML tags
+                            if (/<[^>]+>/.test(part.answer)) {
+                                return this.language === this.Language.ARABIC ? 
+                                    `Part ${partNum} (string): answer لا يجب أن يحتوي على HTML.` : 
+                                    `Part ${partNum} (string): answer must not contain HTML.`;
+                            }
+                        }
+                        
+                        // Validate guidelines - REQUIRED for STRING questions
+                        if (!part.guidelines || !Array.isArray(part.guidelines) || part.guidelines.length === 0) {
+                            return this.language === this.Language.ARABIC ? 
+                                `Part ${partNum} (string): الإرشادات مطلوبة لأسئلة النص القصير. أضف @GUIDELINES مع أمثلة على الإجابات والدرجات.` : 
+                                `Part ${partNum} (string): Guidelines are required for String questions. Add @GUIDELINES with examples of answers and marks.`;
                         }
                         
                         const invalidGuidelines = part.guidelines.filter(g => 
@@ -3569,12 +3994,229 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                         
                         if (invalidGuidelines.length > 0) {
                             return this.language === this.Language.ARABIC ? 
-                                'بعض الإرشادات غير مكتملة. كل إرشاد يجب أن يحتوي على إجابة الطالب والدرجة والتعليق. يمكنك استخدام الصيغة: "إجابة الطالب - 1 - تعليق على الإجابة"' : 
-                                'Some guidelines are incomplete. Each guideline must have student answer, mark, and comment. You can use the format: "student answer - 1 - comment on answer"';
+                                `Part ${partNum} (string): بعض الإرشادات غير مكتملة. كل إرشاد يجب أن يحتوي على إجابة الطالب والدرجة والتعليق.` : 
+                                `Part ${partNum} (string): Some guidelines are incomplete. Each guideline must have student answer, mark, and comment.`;
                         }
                     }
+                    
+                    // ===== COUNTING Validation =====
+                    if (part.type === this.QuestionType.COUNTING) {
+                        if (part.choices && (!Array.isArray(part.choices) || part.choices.length > 0)) {
+                            return this.language === this.Language.ARABIC ? 
+                                `Part ${partNum} (counting): choices يجب أن يكون array فارغ.` : 
+                                `Part ${partNum} (counting): 'choices' must be an empty array.`;
+                        }
+                        
+                        if (!part.answer || typeof part.answer !== 'string' || isNaN(part.answer)) {
+                            return this.language === this.Language.ARABIC ? 
+                                `Part ${partNum} (counting): حقل answer يجب أن يكون string يمثل رقم.` : 
+                                `Part ${partNum} (counting): 'answer' field must be a string representing a number.`;
+                        }
+                        
+                        if (part.grid_size && !/^\d+×\d+$/.test(part.grid_size)) {
+                            return this.language === this.Language.ARABIC ? 
+                                `Part ${partNum} (counting): grid_size يجب أن يكون بصيغة 'rows×columns' (مثل: 3×4).` : 
+                                `Part ${partNum} (counting): 'grid_size' must be in format 'rows×columns' (e.g., 3×4).`;
+                        }
+                    }
+                    
+                    // ===== PUZZLE Validation =====
+                    if (part.type === this.QuestionType.PUZZLE) {
+                        if (part.choices && (!Array.isArray(part.choices) || part.choices.length > 0)) {
+                            return this.language === this.Language.ARABIC ? 
+                                `Part ${partNum} (puzzle): choices يجب أن يكون array فارغ.` : 
+                                `Part ${partNum} (puzzle): 'choices' must be an empty array.`;
+                        }
+                        
+                        // Validate puzzle dimensions
+                        if (!part.puzzleColumns || typeof part.puzzleColumns !== 'string' || isNaN(part.puzzleColumns)) {
+                            return this.language === this.Language.ARABIC ? 
+                                `Part ${partNum} (puzzle): puzzleColumns يجب أن يكون string يمثل رقم.` : 
+                                `Part ${partNum} (puzzle): 'puzzleColumns' must be a string representing a number.`;
+                        }
+                        
+                        if (!part.puzzleRows || typeof part.puzzleRows !== 'string' || isNaN(part.puzzleRows)) {
+                            return this.language === this.Language.ARABIC ? 
+                                `Part ${partNum} (puzzle): puzzleRows يجب أن يكون string يمثل رقم.` : 
+                                `Part ${partNum} (puzzle): 'puzzleRows' must be a string representing a number.`;
+                        }
+                        
+                        // Validate puzzle image
+                        if (!part.puzzleImage || typeof part.puzzleImage !== 'string') {
+                            return this.language === this.Language.ARABIC ? 
+                                `Part ${partNum} (puzzle): puzzleImage يجب أن يكون string URL.` : 
+                                `Part ${partNum} (puzzle): 'puzzleImage' must be a string URL.`;
+                        }
+                        
+                        if (!part.puzzleImageHeight || typeof part.puzzleImageHeight !== 'string' || isNaN(part.puzzleImageHeight)) {
+                            return this.language === this.Language.ARABIC ? 
+                                `Part ${partNum} (puzzle): puzzleImageHeight يجب أن يكون string يمثل رقم.` : 
+                                `Part ${partNum} (puzzle): 'puzzleImageHeight' must be a string representing a number.`;
+                        }
+                        
+                        if (!part.puzzleImageWidth || typeof part.puzzleImageWidth !== 'string' || isNaN(part.puzzleImageWidth)) {
+                            return this.language === this.Language.ARABIC ? 
+                                `Part ${partNum} (puzzle): puzzleImageWidth يجب أن يكون string يمثل رقم.` : 
+                                `Part ${partNum} (puzzle): 'puzzleImageWidth' must be a string representing a number.`;
+                        }
+                        
+                        // Validate puzzle pieces
+                        if (!part.puzzleImageSplited || !Array.isArray(part.puzzleImageSplited)) {
+                            return this.language === this.Language.ARABIC ? 
+                                `Part ${partNum} (puzzle): puzzleImageSplited يجب أن يكون array غير فارغ.` : 
+                                `Part ${partNum} (puzzle): 'puzzleImageSplited' must be a non-empty array.`;
+                        }
+                        
+                        const expectedPieces = parseInt(part.puzzleRows) * parseInt(part.puzzleColumns);
+                        if (part.puzzleImageSplited.length !== expectedPieces) {
+                            return this.language === this.Language.ARABIC ? 
+                                `Part ${partNum} (puzzle): متوقع ${expectedPieces} قطعة بناءً على الصفوف والأعمدة، لكن وُجد ${part.puzzleImageSplited.length}.` : 
+                                `Part ${partNum} (puzzle): Expected ${expectedPieces} image pieces based on rows and columns, but found ${part.puzzleImageSplited.length}.`;
+                        }
+                        
+                        // Validate each puzzle piece
+                        for (let i = 0; i < part.puzzleImageSplited.length; i++) {
+                            const piece = part.puzzleImageSplited[i];
+                            if (piece.index === undefined || typeof piece.index !== 'number') {
+                                return this.language === this.Language.ARABIC ? 
+                                    `Part ${partNum} (puzzle): القطعة ${i + 1} مفقودة أو لديها index غير صالح.` : 
+                                    `Part ${partNum} (puzzle): Piece at index ${i + 1} is missing or has invalid 'index'.`;
+                            }
+                            
+                            if (piece.fixed_order === undefined || typeof piece.fixed_order !== 'number') {
+                                return this.language === this.Language.ARABIC ? 
+                                    `Part ${partNum} (puzzle): القطعة ${i + 1} مفقودة أو لديها fixed_order غير صالح.` : 
+                                    `Part ${partNum} (puzzle): Piece at index ${i + 1} is missing or has invalid 'fixed_order'.`;
+                            }
+                            
+                            if (piece.correct_order === undefined || typeof piece.correct_order !== 'number') {
+                                return this.language === this.Language.ARABIC ? 
+                                    `Part ${partNum} (puzzle): القطعة ${i + 1} مفقودة أو لديها correct_order غير صالح.` : 
+                                    `Part ${partNum} (puzzle): Piece at index ${i + 1} is missing or has invalid 'correct_order'.`;
+                            }
+                            
+                            if (!piece.src || typeof piece.src !== 'string') {
+                                return this.language === this.Language.ARABIC ? 
+                                    `Part ${partNum} (puzzle): القطعة ${i + 1} مفقودة أو لديها src غير صالح.` : 
+                                    `Part ${partNum} (puzzle): Piece at index ${i + 1} is missing or has invalid 'src'.`;
+                            }
+                        }
+                    }
+                    
+                    // ===== INPUT_BOX Validation =====
+                    if (part.type === this.QuestionType.INPUT_BOX) {
+                        if (part.choices && (!Array.isArray(part.choices) || part.choices.length > 0)) {
+                            return this.language === this.Language.ARABIC ? 
+                                `Part ${partNum} (input_box): choices يجب أن يكون array فارغ.` : 
+                                `Part ${partNum} (input_box): 'choices' must be an empty array.`;
+                        }
+                        
+                        if (!part.answer || typeof part.answer !== 'object') {
+                            return this.language === this.Language.ARABIC ? 
+                                `Part ${partNum} (input_box): حقل answer يجب أن يكون object.` : 
+                                `Part ${partNum} (input_box): 'answer' field must be an object.`;
+                        }
+                        
+                        if (typeof part.answer.value !== 'string') {
+                            return this.language === this.Language.ARABIC ? 
+                                `Part ${partNum} (input_box): answer.value يجب أن يكون string.` : 
+                                `Part ${partNum} (input_box): 'answer.value' must be a string.`;
+                        }
+                        
+                        // For INPUT_BOX questions, constrains is added during transform stage
+                        // So we don't validate it during parsing stage
+                        
+                        if (part.answer.unit !== undefined && typeof part.answer.unit !== 'string') {
+                            return this.language === this.Language.ARABIC ? 
+                                `Part ${partNum} (input_box): answer.unit يجب أن يكون string أو undefined.` : 
+                                `Part ${partNum} (input_box): 'answer.unit' must be a string or undefined.`;
+                        }
+                    }
+                    
+                    // ===== FRQ_AI Validation =====
+                    if (part.type === this.QuestionType.FRQ_AI) {
+                        if (part.choices && (!Array.isArray(part.choices) || part.choices.length > 0)) {
+                            return this.language === this.Language.ARABIC ? 
+                                `Part ${partNum} (frq_ai): choices يجب أن يكون array فارغ.` : 
+                                `Part ${partNum} (frq_ai): 'choices' must be an empty array.`;
+                        }
+                        
+                        if (!part.answer || typeof part.answer !== 'string') {
+                            return this.language === this.Language.ARABIC ? 
+                                `Part ${partNum} (frq_ai): حقل answer مطلوب ويجب أن يكون string.` : 
+                                `Part ${partNum} (frq_ai): 'answer' field is required and must be a string.`;
+                        }
+                        
+                        // For FRQ_AI questions, ai field is added during transform stage
+                        // So we don't validate it during parsing stage
+                    }
                 }
+                
                 return null; // No validation errors
+            }
+            
+            // Helper function to validate choice structure
+            validateChoice(choice, partNum, choiceNum) {
+                const requiredFields = ['type', 'html_content', 'values', 'unit', 'index', 'fixed_order', 'last_order'];
+                
+                for (const field of requiredFields) {
+                    if (choice[field] === undefined) {
+                        return this.language === this.Language.ARABIC ? 
+                            `Part ${partNum}, Choice ${choiceNum}: حقل "${field}" مفقود.` : 
+                            `Part ${partNum}, Choice ${choiceNum}: Missing required field "${field}".`;
+                    }
+                }
+                
+                // Validate type
+                if (!['key', 'distractor'].includes(choice.type)) {
+                    return this.language === this.Language.ARABIC ? 
+                        `Part ${partNum}, Choice ${choiceNum}: نوع الاختيار "${choice.type}" غير صالح. يجب أن يكون "key" أو "distractor".` : 
+                        `Part ${partNum}, Choice ${choiceNum}: Invalid choice type "${choice.type}". Must be "key" or "distractor".`;
+                }
+                
+                // Validate html_content
+                if (typeof choice.html_content !== 'string' || choice.html_content.trim() === '') {
+                    return this.language === this.Language.ARABIC ? 
+                        `Part ${partNum}, Choice ${choiceNum}: html_content يجب أن يكون string غير فارغ.` : 
+                        `Part ${partNum}, Choice ${choiceNum}: 'html_content' must be a non-empty string.`;
+                }
+                
+                // Validate values
+                if (!Array.isArray(choice.values)) {
+                    return this.language === this.Language.ARABIC ? 
+                        `Part ${partNum}, Choice ${choiceNum}: values يجب أن يكون array.` : 
+                        `Part ${partNum}, Choice ${choiceNum}: 'values' must be an array.`;
+                }
+                
+                // Validate unit
+                if (choice.unit !== null && typeof choice.unit !== 'string') {
+                    return this.language === this.Language.ARABIC ? 
+                        `Part ${partNum}, Choice ${choiceNum}: unit يجب أن يكون null أو string.` : 
+                        `Part ${partNum}, Choice ${choiceNum}: 'unit' must be null or a string.`;
+                }
+                
+                // Validate index
+                if (typeof choice.index !== 'number' || choice.index < 0) {
+                    return this.language === this.Language.ARABIC ? 
+                        `Part ${partNum}, Choice ${choiceNum}: index يجب أن يكون رقم غير سالب.` : 
+                        `Part ${partNum}, Choice ${choiceNum}: 'index' must be a non-negative number.`;
+                }
+                
+                // Validate fixed_order
+                if (typeof choice.fixed_order !== 'number' || choice.fixed_order <= 0) {
+                    return this.language === this.Language.ARABIC ? 
+                        `Part ${partNum}, Choice ${choiceNum}: fixed_order يجب أن يكون رقم موجب.` : 
+                        `Part ${partNum}, Choice ${choiceNum}: 'fixed_order' must be a positive number.`;
+                }
+                
+                // Validate last_order
+                if (typeof choice.last_order !== 'boolean') {
+                    return this.language === this.Language.ARABIC ? 
+                        `Part ${partNum}, Choice ${choiceNum}: last_order يجب أن يكون boolean.` : 
+                        `Part ${partNum}, Choice ${choiceNum}: 'last_order' must be a boolean.`;
+                }
+                
+                return null; // No errors
             }
 
             autoSaveContent() {
@@ -3727,7 +4369,6 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
     this.QuestionType.GAP_TEXT,
     this.QuestionType.INPUT_BOX,  // <-- تمت إضافته
     this.QuestionType.STRING, 
-    this.QuestionType.FRQ,
     this.QuestionType.FRQ_AI      // <-- تمت إضافته
 ];
 
