@@ -2251,8 +2251,8 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                 // Only replace @BLANK with HTML span for GAP_TEXT questions
                 // For other question types, let processTextForHtml handle @BLANK in math contexts
                 if (part.type === this.QuestionType.GAP_TEXT && processedStem && processedStem.includes('@BLANK')) {
-                    const spaceSpan = '<span data-node-type="blank-line" data-node-variation="space">&nbsp;</span>';
-                    processedStem = processedStem.replace(/@BLANK/g, spaceSpan);
+                    const gapSpan = '<span data-node-type="blank-line" data-node-variation="gap"> </span>';
+                    processedStem = processedStem.replace(/@BLANK/g, gapSpan);
                 }
 
                 const partJson = {
@@ -2472,6 +2472,10 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
 
                 // FIX: Changed from 5 or more underscores to 4 or more, per user request.
                 let processedText = text.replace(/_{4,}/g, '<span data-node-type="blank-line" data-node-variation="space">&nbsp;</span>');
+                
+                // Replace @BLANK with blank-line span if it appears in text (for gapText questions)
+                // This ensures @BLANK doesn't show up in the final display
+                processedText = processedText.replace(/@BLANK/g, '<span data-node-type="blank-line" data-node-variation="gap"> </span>');
 
                 // If the text contains a poem block, split into pre/poem/post segments and render exactly as required
                 const poemRegex = /@POEM[\t ]*\n([\s\S]*?)\n@END_POEM/;
@@ -2679,7 +2683,12 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                     const isInteractive = p.type === this.QuestionType.MCQ || p.type === this.QuestionType.MRQ;
                     html += `<div class="part-preview" data-interactive="${isInteractive}" data-part-index="${pIndex}">`;
                     html += `<div class="question-type-badge type-${p.type}">${this.questionTypeConfigs[p.type]?.label || p.type} | ID: ${questionIdText}</div>`;
-                    html += `<div>${this.processTextForHtml(p.stem, lang, q.metadata.id, pIndex, 'stem')}</div>`;
+                    // Replace @BLANK with visual representation for gapText questions in preview
+                    let stemToDisplay = p.stem;
+                    if (p.type === 'gapText' && stemToDisplay && stemToDisplay.includes('@BLANK')) {
+                        stemToDisplay = stemToDisplay.replace(/@BLANK/g, '<span data-node-type="blank-line" data-node-variation="gap"> </span>');
+                    }
+                    html += `<div>${this.processTextForHtml(stemToDisplay, lang, q.metadata.id, pIndex, 'stem')}</div>`;
                     
                     if (p.type === 'oq' || p.type === 'mcq' || p.type === 'mrq') {
                         const correctAnswers = new Set(Array.isArray(p.answer) ? p.answer : [p.answer]);
