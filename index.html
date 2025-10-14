@@ -204,6 +204,31 @@
             outline: none;
         }
 
+        /* --- Blank Line Styling --- */
+        span[data-node-type="blank-line"] {
+            border-bottom: 2px solid #374151;
+            display: inline-block;
+            min-width: 80px;
+            height: 1.2em;
+            margin: 0 4px;
+            vertical-align: baseline;
+            position: relative;
+            top: -2px;
+        }
+        
+        /* Different styles for gap (GapText) vs space (other types) */
+        span[data-node-type="blank-line"][data-node-variation="gap"] {
+            border-bottom-color: #4f46e5;
+            border-bottom-style: dashed;
+            min-width: 100px;
+        }
+        
+        span[data-node-type="blank-line"][data-node-variation="space"] {
+            border-bottom-color: #374151;
+            border-bottom-style: solid;
+            min-width: 80px;
+        }
+
         /* --- Tags Modal --- */
         #tagsModal {
             display: none;
@@ -2419,10 +2444,30 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                 return this.processTextForHtml(answerText, lang, null, -1, 'answer', -1, questionType);
             }
             _transformInputBoxPart(part) {
+                // Detect the type based on the value
+                let answerType = "integer"; // default
+                const value = part.answer.value;
+                
+                if (typeof value === 'string') {
+                    // Check if it's a fraction (e.g., "1/2", "3/4")
+                    if (/^\d+\/\d+$/.test(value.trim())) {
+                        answerType = "fraction";
+                    }
+                    // Check if it's a decimal (e.g., "3.14", "0.5")
+                    else if (/^\d+\.\d+$/.test(value.trim())) {
+                        answerType = "decimal";
+                    }
+                    // Check if it's an integer (e.g., "42", "100")
+                    else if (/^\d+$/.test(value.trim())) {
+                        answerType = "integer";
+                    }
+                }
+                
                 const answer = {
                     value: part.answer.value,
-                    constrains: { type: "integer" }
+                    constrains: { type: answerType }
                 };
+                
                 // Only add the unit key if it's a non-empty string.
                 if (part.answer.unit) {
                     answer.unit = part.answer.unit;
@@ -3063,7 +3108,7 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
 
                 // Add default "none" option
                 const defaultOption = document.createElement('option');
-                defaultOption.value = '';
+                defaultOption.value = 'none';
                 defaultOption.textContent = "none";
                 select.appendChild(defaultOption);
 
