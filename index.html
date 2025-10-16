@@ -2690,7 +2690,7 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                                 let t = chunk;
                                 t = t.replace(/\[U\]([\s\S]+?)\[\/U\]/g, '<u>$1</u>');
                                 t = t.replace(/(^|\n)\s*-\s+/g, `$1§ `);
-                                html += `<span style="white-space: pre-wrap;">${DOMPurify.sanitize(t)}</span>`;
+                                html += `<span style="white-space: pre-line;">${DOMPurify.sanitize(t.replace(/\n/g, '<br>'))}</span>`;
                             }
                         }
                         return `<p class="LexicalTheme__paragraph" style="text-align: justify;"${direction}>${html}</p>`;
@@ -2722,7 +2722,7 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                         let textPart = part;
                         textPart = textPart.replace(/\[U\]([\s\S]+?)\[\/U\]/g, '<u>$1</u>');
                         textPart = textPart.replace(/(^|\n)\s*-\s+/g, `$1§ `);
-                        finalHtmlContent += `<span style="white-space: pre-wrap;">${DOMPurify.sanitize(textPart)}</span>`;
+                        finalHtmlContent += `<span style="white-space: pre-line;">${DOMPurify.sanitize(textPart.replace(/\n/g, '<br>'))}</span>`;
                     }
                 }
                 return `<p class="LexicalTheme__paragraph" style="text-align: justify;"${direction}>${finalHtmlContent}</p>`;
