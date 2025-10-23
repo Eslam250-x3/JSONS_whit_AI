@@ -111,16 +111,29 @@
         #questionsPreview { flex-grow: 1; overflow-y: auto; max-height: 70vh; }
         /* --- Poem Styling --- */
         .PoemContainer { margin: 12px 0; }
-        .Poem { font-size: 1.25em; line-height: 2; }
+        .Poem { 
+            font-size: 1.25em; 
+            line-height: 2;
+            font-family: "Noto Naskh Arabic", serif;
+            text-rendering: optimizeLegibility;
+            -webkit-font-smoothing: antialiased;
+        }
         .Poem.vertical-split {
             display: grid; grid-template-columns: 1fr 1fr; column-gap: 2rem; row-gap: .25em;
             grid-auto-flow: row dense;
             direction: rtl; text-align: center; align-items: start; justify-items: stretch; align-content: start; justify-content: center;
         }
-        .Poem.vertical-split p { margin: 0.25em 0; white-space: pre-wrap; }
-        /* In RTL: place odd lines in the right column (2), even in the left column (1) */
-        .Poem.vertical-split p:nth-child(odd) { grid-column: 2 / 3; justify-self: end; text-align: right; }
-        .Poem.vertical-split p:nth-child(even) { grid-column: 1 / 2; justify-self: start; text-align: left; }
+        .Poem.vertical-split p { 
+            margin: 0.25em 0; 
+            white-space: pre-wrap;
+            text-rendering: optimizeLegibility;
+            -webkit-font-smoothing: antialiased;
+            word-spacing: normal;
+            letter-spacing: normal;
+        }
+        /* Correct order: First line (odd) in first column, second line (even) in second column */
+        .Poem.vertical-split p:nth-child(odd) { grid-column: 1 / 2; justify-self: start; text-align: left; }
+        .Poem.vertical-split p:nth-child(even) { grid-column: 2 / 3; justify-self: end; text-align: right; }
         @media (max-width: 768px) {
             .Poem.vertical-split { grid-template-columns: 1fr; }
             .Poem.vertical-split p { grid-column: 1 !important; text-align: right !important; }
@@ -2702,7 +2715,10 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                         .filter(Boolean)
                         .map(line => `<p>${DOMPurify.sanitize(line)}</p>`) // each verse becomes a <p>
                         .join('');
-                    const poemHtml = `<div class="PoemContainer"><article class="Poem vertical-split">${verses}</article></div>`;
+                    // Add data attribute to mark poems that need kashida processing
+                    // Add dir="rtl" and lang="ar" for Arabic poems to ensure correct text direction and locale in JSON
+                    const localeAttr = language === this.Language.ARABIC ? ' lang="ar"' : '';
+                    const poemHtml = `<div class="PoemContainer"${direction}${localeAttr}><article class="Poem vertical-split" data-kashida-pending="true">${verses}</article></div>`;
                     return `${renderParagraph(preText)}${poemHtml}${renderParagraph(postText)}`;
                 }
 
@@ -5012,6 +5028,87 @@ Strictly follow this formatting for each question:
         }
         const app = new AIQuestionConverter();
     });
+    </script>
+    
+    <!-- Kashida Engine for Poetry -->
+    <script src="kashida-engine.min.js"></script>
+    <script>
+        // Apply Kashida to all poems automatically
+        function applyKashidaToPoems() {
+            // Wait for KashidaEngine to be available
+            if (typeof KashidaEngine === 'undefined' || typeof KashidaEngine.unifyTextsWidths !== 'function') {
+                console.warn('⚠️ Kashida Engine not loaded yet');
+                return;
+            }
+
+            // Find all poems that need kashida processing
+            const poems = document.querySelectorAll('.Poem[data-kashida-pending="true"]');
+            
+            poems.forEach(poemElement => {
+                try {
+                    // Get all verses from the poem
+                    const verseElements = poemElement.querySelectorAll('p');
+                    if (verseElements.length === 0) return;
+                    
+                    // Extract verse text
+                    const verses = Array.from(verseElements).map(p => p.textContent.trim());
+                    
+                    // Get the computed font from the poem element
+                    const computedStyle = window.getComputedStyle(poemElement);
+                    const font = computedStyle.font || 
+                                `${computedStyle.fontStyle} ${computedStyle.fontWeight} ${computedStyle.fontSize}/${computedStyle.lineHeight} ${computedStyle.fontFamily}`;
+                    
+                    // Apply kashida using KashidaEngine API
+                    const processedVerses = KashidaEngine.unifyTextsWidths(verses, font);
+                    
+                    // Update the verses with kashida
+                    verseElements.forEach((p, index) => {
+                        if (processedVerses[index]) {
+                            p.textContent = processedVerses[index];
+                        }
+                    });
+                    
+                    // Mark as processed
+                    poemElement.removeAttribute('data-kashida-pending');
+                    poemElement.setAttribute('data-kashida-applied', 'true');
+                    
+                    console.log('✅ Kashida applied to poem with', verseElements.length, 'verses');
+                } catch (err) {
+                    console.error('❌ Error applying kashida to poem:', err);
+                }
+            });
+        }
+
+        // Apply kashida when DOM changes (new questions loaded)
+        const observer = new MutationObserver((mutations) => {
+            let shouldApplyKashida = false;
+            mutations.forEach(mutation => {
+                mutation.addedNodes.forEach(node => {
+                    if (node.nodeType === 1) { // Element node
+                        if (node.classList && node.classList.contains('Poem')) {
+                            shouldApplyKashida = true;
+                        } else if (node.querySelector && node.querySelector('.Poem[data-kashida-pending="true"]')) {
+                            shouldApplyKashida = true;
+                        }
+                    }
+                });
+            });
+            if (shouldApplyKashida) {
+                // Delay slightly to ensure styles are computed
+                setTimeout(applyKashidaToPoems, 100);
+            }
+        });
+
+        // Start observing the document for changes
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+
+        // Also apply on window load
+        window.addEventListener('load', () => {
+            setTimeout(applyKashidaToPoems, 200);
+        });
     </script>
 </body>
 </html>
