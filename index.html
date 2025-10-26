@@ -2027,7 +2027,7 @@ ${rawText}
             _parsePartWithTags(partBlock, globalMetadata) {
                 const partMetadata = { ...globalMetadata };
                 const content = {};
-                const mainTags = ['STEM', 'CHOICES', 'ANSWER', 'GAPS', 'MATCHING_PAIRS', 'GUIDELINES', 'TASK_TARGET', 'OVERALL_TASK_INSTRUCTIONS'];
+                const mainTags = ['TASK', 'OVERVIEW', 'STEM', 'CHOICES', 'ANSWER', 'GAPS', 'MATCHING_PAIRS', 'GUIDELINES', 'TASK_TARGET', 'OVERALL_TASK_INSTRUCTIONS'];
                 let remainingBlock = partBlock.trim();
                 const lines = remainingBlock.split('\n');
                 let contentStartIndex = 0;
@@ -4202,10 +4202,14 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                     { name: 'FRQ (AI)', hint: 'إجابة مقالية يتم تقييمها بالذكاء الاصطناعي', content: 'type: frq_ai\nai_template_id: 593158513739\n@STEM\nاكتب نص السؤال هنا\n\n@ANSWER\nإجابة نموذجية مختصرة\n---\n' },
                     { name: 'Input Box', hint: 'قيمة + وحدة مفصولة بـ |', content: 'type: input_box\n@STEM\nاكتب نص السؤال هنا\n\n@ANSWER\n12 | cm\n---\n' },
                     { name: 'Multi-Part', hint: 'سؤال متعدد الأجزاء باستخدام @STATEMENT و @PART', content: '@STATEMENT\nمقدمة السؤال العامة\n@PART\ntype: mcq\n@STEM\nنص الجزء الأول\n@CHOICES\n* صحيح\n- خطأ\n@PART\ntype: string\n@STEM\nنص الجزء الثاني\n@ANSWER\nالإجابة هنا\n---\n' },
-                    { name: 'Poem', hint: 'قالب شعر: ضع الأبيات بين @POEM و @END_POEM', content: 'type: string\n@STEM\n@POEM\nرَمَوني بعُقمٍ في الشباب وليتني\nعقِمتُ فلم أجْزعْ لقولِ عِداتي\nأنا البحر في أحشائه الدرُّ كامنٌ\nفهل ساءَلوا الغوَّاصَ عن صَدَفاتي؟\n@END_POEM\n\n@ANSWER\n...\n---\n' }
+                    { name: 'Poem', hint: 'قالب شعر: ضع الأبيات بين @POEM و @END_POEM', content: 'type: string\n@STEM\n@POEM\nرَمَوني بعُقمٍ في الشباب وليتني\nعقِمتُ فلم أجْزعْ لقولِ عِداتي\nأنا البحر في أحشائه الدرُّ كامنٌ\nفهل ساءَلوا الغوَّاصَ عن صَدَفاتي؟\n@END_POEM\n\n@ANSWER\n...\n---\n' },
+                    { name: 'Task-Based', hint: 'سؤال قائم على المهمة مع نظرة عامة', content: 'type: mcq\n@OVERVIEW\nنظرة عامة على الموضوع أو السياق\n@TASK\nالمهمة المطلوبة من الطالب\n@STEM\nنص السؤال الرئيسي\n@CHOICES\n* الاختيار الصحيح\n- اختيار خاطئ\n- اختيار خاطئ\n- اختيار خاطئ\n---\n' },
+                    { name: 'Overview-Only', hint: 'سؤال مع نظرة عامة فقط', content: 'type: string\n@OVERVIEW\nنظرة عامة على الموضوع أو السياق\n@STEM\nنص السؤال الرئيسي\n@ANSWER\nالإجابة هنا\n---\n' }
                 ];
 
                 const tags = [
+                    { tag: '@TASK', hint: 'وصف المهمة المطلوبة من الطالب' },
+                    { tag: '@OVERVIEW', hint: 'نظرة عامة على الموضوع أو السياق' },
                     { tag: '@STEM', hint: 'نص السؤال الرئيسي' },
                     { tag: '@CHOICES', hint: 'قائمة الاختيارات (عنصر في كل سطر)' },
                     { tag: '@ANSWER', hint: 'الإجابة (String/FRQ_AI/Input Box)' },
