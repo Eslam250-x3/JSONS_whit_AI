@@ -757,15 +757,27 @@
             <!-- English Stage Selection -->
             <div id="englishOptionsContainer" style="display:none; margin-bottom: 20px;">
                 <div style="margin-bottom: 15px;">
-                    <label for="englishStageSelect" style="font-weight:bold; display:block; margin-bottom:10px;">المرحلة / Stage:</label>
+                    <label for="englishStageSelect" style="font-weight:bold; display:block; margin-bottom:10px;">الصف / Grade:</label>
                     <select id="englishStageSelect" style="width:100%; padding:12px; border-radius:8px; border:2px solid #e5e7eb; font-size:14px;">
-                        <option value="">-- اختر المرحلة --</option>
+                        <option value="">-- اختر الصف --</option>
+                        <option value="1">Grade 1</option>
+                        <option value="2">Grade 2</option>
+                        <option value="3">Grade 3</option>
+                        <option value="4">Grade 4</option>
+                        <option value="5">Grade 5</option>
+                        <option value="6">Grade 6</option>
+                        <option value="7">Grade 7</option>
+                        <option value="8">Grade 8</option>
+                        <option value="9">Grade 9</option>
+                        <option value="10">Grade 10</option>
+                        <option value="11">Grade 11</option>
+                        <option value="12">Grade 12</option>
                     </select>
                 </div>
                 
                 <div style="padding:12px; background:#e0e7ff; border-radius:8px; border:1px solid #6366f1;">
                     <p style="margin:0; color:#4338ca; font-size:14px;">
-                        💡 <strong>ملاحظة:</strong> بعد اختيار المرحلة، ستظهر قائمة منسدلة فوق كل سؤال frq_ai في المعاينة لاختيار نوع Template ID المناسب. (أسئلة String تستخدم Template ID ثابت: 593158513739)
+                        💡 <strong>ملاحظة:</strong> بعد اختيار الصف، سيتم تعبئة Feedback Dialect و Language Level تلقائياً. ستظهر قائمة منسدلة فوق كل سؤال frq_ai في المعاينة لاختيار نوع Template ID المناسب. (أسئلة String تستخدم Template ID ثابت: 593158513739)
                     </p>
                 </div>
             </div>
@@ -1173,6 +1185,32 @@
                 this.selectedEnglishStage = null; // Track selected English stage
                 this.questionTemplateSelections = {}; // Store user template selections per question
                 this.questionOQDirections = {}; // Store OQ direction selections per question
+                
+                // Function to get stage from grade
+                this.getStageFromGrade = (grade) => {
+                    const gradeNum = parseInt(grade);
+                    if (gradeNum >= 1 && gradeNum <= 3) return "Lower_Primary";
+                    if (gradeNum >= 4 && gradeNum <= 6) return "Upper_Primary";
+                    if (gradeNum >= 7 && gradeNum <= 9) return "Middle_School";
+                    if (gradeNum >= 10 && gradeNum <= 12) return "High_School";
+                    return null;
+                };
+                
+                // Grade mapping with feedback dialect, language level, and age
+                this.gradeMapping = {
+                    "1": { dialect: "American English", level: "A1", age: "6-7" },
+                    "2": { dialect: "American English", level: "A1", age: "7-8" },
+                    "3": { dialect: "American English", level: "A1", age: "8-9" },
+                    "4": { dialect: "American English", level: "A2", age: "9-10" },
+                    "5": { dialect: "American English", level: "A2", age: "10-11" },
+                    "6": { dialect: "American English", level: "A2", age: "11-12" },
+                    "7": { dialect: "American English", level: "A2", age: "12-13" },
+                    "8": { dialect: "American English", level: "B1", age: "13-14" },
+                    "9": { dialect: "American English", level: "B1", age: "14-15" },
+                    "10": { dialect: "American English", level: "B1", age: "15-16" },
+                    "11": { dialect: "American English", level: "B2", age: "16-17" },
+                    "12": { dialect: "American English", level: "B2", age: "17-18" }
+                };
                 // --- 5. APP BOOTSTRAP ---
                 this.loadSettings();
                 this.loadApiKeys();
@@ -1379,7 +1417,37 @@
                 document.getElementById('subject-template-close-btn').addEventListener('click', () => this.closeSubjectTemplateModal());
                 document.getElementById('subjectSelect').addEventListener('change', () => this.updateSubjectQuestionsPreview());
                 document.getElementById('englishStageSelect').addEventListener('change', (e) => {
-                    this.selectedEnglishStage = e.target.value;
+                    const selectedGrade = e.target.value;
+                    this.selectedEnglishStage = selectedGrade;
+                    
+                    // Update all FRQ_AI questions with grade metadata ONLY for English subject
+                    if (selectedGrade) {
+                        const stage = this.getStageFromGrade(selectedGrade);
+                        const gradeInfo = this.gradeMapping[selectedGrade];
+                        const selectedSubject = document.getElementById('subjectSelect')?.value;
+                        
+                        if (gradeInfo && selectedSubject === 'English') {
+                            this.questions.forEach(question => {
+                                question.metadata.subject = 'English';
+                                question.parts.forEach(part => {
+                                    if (part.type === this.QuestionType.FRQ_AI) {
+                                        part.metadata.subject = 'English';
+                                        part.metadata.feedback_dialect = gradeInfo.dialect;
+                                        part.metadata.language_level = gradeInfo.level;
+                                    }
+                                });
+                            });
+                            
+                            // Re-render to update preview
+                            this.displayResults();
+                            
+                            // Update JSON if visible
+                            if (document.getElementById('jsonOutput').style.display === 'block') {
+                                this.convertToJSON();
+                            }
+                        }
+                    }
+                    
                     this.updateSubjectQuestionsPreview();
                 });
 
@@ -1959,7 +2027,7 @@ ${rawText}
             _parsePartWithTags(partBlock, globalMetadata) {
                 const partMetadata = { ...globalMetadata };
                 const content = {};
-                const mainTags = ['STEM', 'CHOICES', 'ANSWER', 'GAPS', 'MATCHING_PAIRS', 'GUIDELINES'];
+                const mainTags = ['STEM', 'CHOICES', 'ANSWER', 'GAPS', 'MATCHING_PAIRS', 'GUIDELINES', 'TASK_TARGET', 'OVERALL_TASK_INSTRUCTIONS'];
                 let remainingBlock = partBlock.trim();
                 const lines = remainingBlock.split('\n');
                 let contentStartIndex = 0;
@@ -2116,6 +2184,13 @@ ${rawText}
             break;
         case this.QuestionType.FRQ_AI:
             part.answer = (content.ANSWER || '').trim();
+            // Process task_target and overall_task_instructions if present
+            if (content.TASK_TARGET) {
+                part.metadata.task_target = content.TASK_TARGET.trim();
+            }
+            if (content.OVERALL_TASK_INSTRUCTIONS) {
+                part.metadata.overall_task_instructions = content.OVERALL_TASK_INSTRUCTIONS.trim();
+            }
             break;
         case this.QuestionType.INPUT_BOX: {
             const answerParts = (content.ANSWER || '|').split('|');
@@ -2475,6 +2550,19 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                             return;
                         }
                         
+                        // Check FRQ_AI with Simple_Sentences templates has task_target
+                        if (p.type === this.QuestionType.FRQ_AI && p.metadata.ai_template_id) {
+                            const simpleSentencesTemplates = ["547160780494", "968102871405", "650142506209", "973160802168"];
+                            if (simpleSentencesTemplates.includes(String(p.metadata.ai_template_id))) {
+                                if (!p.metadata.task_target) {
+                                    const errorMsg = `Question ${i + 1}, Part ${j + 1} (frq_ai): Simple Sentences templates require task_target.`;
+                                    const errorMsgAr = `السؤال ${i + 1}, الجزء ${j + 1} (frq_ai): قوالب Simple Sentences تتطلب task_target.`;
+                                    this.showMessage(this.language === this.Language.ARABIC ? errorMsgAr : errorMsg, 'error');
+                                    return;
+                                }
+                            }
+                        }
+                        
                         // Check MATCHING has valid pairs
                         if (p.type === this.QuestionType.MATCHING) {
                             if (!p.pairs || p.pairs.length === 0) {
@@ -2756,6 +2844,38 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                 const aiTemplateId = part.metadata.ai_template_id || globalMetadata.ai_template_id;
                 if (aiTemplateId) {
                     result.ai = { "ai_template_id": Number(aiTemplateId) };
+                    
+                    // Add task_target for Simple_Sentences templates
+                    const simpleSentencesTemplates = ["547160780494", "968102871405", "650142506209", "973160802168"];
+                    if (simpleSentencesTemplates.includes(String(aiTemplateId))) {
+                        if (part.metadata.task_target) {
+                            result.ai.task_target = part.metadata.task_target;
+                        }
+                    }
+                    
+                    // Add overall_task_instructions for Middle_School and High_School templates with Simple_Sentences
+                    const overallTaskTemplates = ["707183083536"]; // English_Middle_School_Broken_Task
+                    if (overallTaskTemplates.includes(String(aiTemplateId))) {
+                        if (part.metadata.overall_task_instructions) {
+                            result.ai.overall_task_instructions = part.metadata.overall_task_instructions;
+                        }
+                    }
+                    
+                    // Add feedback_dialect, language_level, and feedback_language for English subject only
+                    // Check if this is an English subject question (regardless of language)
+                    const isEnglishSubject = globalMetadata.subject === 'English' || part.metadata.subject === 'English';
+                    if (isEnglishSubject) {
+                        // Add feedback_dialect if present
+                        if (part.metadata.feedback_dialect) {
+                            result.ai.feedback_dialect = part.metadata.feedback_dialect;
+                        }
+                        
+                        // Always add language_level for English FRQ_AI questions (even if empty)
+                        result.ai.language_level = part.metadata.language_level || "";
+                        
+                        // Add feedback_language for English FRQ_AI questions
+                        result.ai.feedback_language = "Arabic English";
+                    }
                 }
                 return result;
             }
@@ -3092,6 +3212,58 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                     });
                 });
                 
+                // 🎯 Add event listeners for task_target inputs
+                document.querySelectorAll('.task-target-input').forEach(input => {
+                    input.addEventListener('blur', (e) => {
+                        const questionId = e.target.dataset.questionId;
+                        const taskTarget = e.target.value.trim();
+                        
+                        const question = this.questions.find(q => q.metadata.id === questionId);
+                        if (question) {
+                            question.parts.forEach(part => {
+                                if (part.type === this.QuestionType.FRQ_AI) {
+                                    if (taskTarget) {
+                                        part.metadata.task_target = taskTarget;
+                                    } else {
+                                        delete part.metadata.task_target;
+                                    }
+                                }
+                            });
+                        }
+                        
+                        // Update JSON if visible
+                        if (document.getElementById('jsonOutput').style.display === 'block') {
+                            this.convertToJSON();
+                        }
+                    });
+                });
+                
+                // 🎯 Add event listeners for overall_task_instructions inputs
+                document.querySelectorAll('.overall-task-instructions-input').forEach(textarea => {
+                    textarea.addEventListener('blur', (e) => {
+                        const questionId = e.target.dataset.questionId;
+                        const overallTaskInstructions = e.target.value.trim();
+                        
+                        const question = this.questions.find(q => q.metadata.id === questionId);
+                        if (question) {
+                            question.parts.forEach(part => {
+                                if (part.type === this.QuestionType.FRQ_AI) {
+                                    if (overallTaskInstructions) {
+                                        part.metadata.overall_task_instructions = overallTaskInstructions;
+                                    } else {
+                                        delete part.metadata.overall_task_instructions;
+                                    }
+                                }
+                            });
+                        }
+                        
+                        // Update JSON if visible
+                        if (document.getElementById('jsonOutput').style.display === 'block') {
+                            this.convertToJSON();
+                        }
+                    });
+                });
+                
                 // 🎯 Add event listeners for OQ direction selectors
                 document.querySelectorAll('.oq-direction-selector').forEach(select => {
                     select.addEventListener('change', (e) => {
@@ -3139,7 +3311,8 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                 const hasFRQAIQuestion = q.parts.some(part => part.type === this.QuestionType.FRQ_AI);
                 
                 if (this.selectedEnglishStage && hasFRQAIQuestion) {
-                    const templates = this.englishTemplatesByStage[this.selectedEnglishStage] || [];
+                    const stage = this.getStageFromGrade(this.selectedEnglishStage);
+                    const templates = this.englishTemplatesByStage[stage] || [];
                     const currentSelection = this.questionTemplateSelections[q.metadata.id] || '';
                     
                     html += `<div style="margin-bottom:15px;">
@@ -3156,6 +3329,38 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                             `).join('')}
                         </select>
                     </div>`;
+                    
+                    // Add task_target and overall_task_instructions inputs if Simple_Sentences or Broken_Task template is selected
+                    const simpleSentencesTemplates = ["547160780494", "968102871405", "650142506209", "973160802168"];
+                    const overallTaskTemplates = ["707183083536"];
+                    
+                    if (simpleSentencesTemplates.includes(currentSelection)) {
+                        const taskTarget = q.parts.find(p => p.type === this.QuestionType.FRQ_AI)?.metadata?.task_target || '';
+                        html += `<div style="margin-bottom:15px;">
+                            <label style="display:block; margin-bottom:5px; font-weight:bold; color:#6b7280;">Task Target (واجب الطالب):</label>
+                            <input 
+                                type="text" 
+                                class="task-target-input" 
+                                data-question-id="${q.metadata.id}"
+                                value="${taskTarget}"
+                                placeholder="مثال: To use appropriate structures to write the beginning of a story"
+                                style="width:100%; padding:8px; border-radius:6px; border:1px solid #e5e7eb; font-size:14px; background:white;"
+                            />
+                        </div>`;
+                    }
+                    
+                    if (overallTaskTemplates.includes(currentSelection)) {
+                        const overallTaskInstructions = q.parts.find(p => p.type === this.QuestionType.FRQ_AI)?.metadata?.overall_task_instructions || '';
+                        html += `<div style="margin-bottom:15px;">
+                            <label style="display:block; margin-bottom:5px; font-weight:bold; color:#6b7280;">Overall Task Instructions (التعليمات العامة للمهمة):</label>
+                            <textarea 
+                                class="overall-task-instructions-input" 
+                                data-question-id="${q.metadata.id}"
+                                placeholder="مثال: Write an email on this topic: 'A Trip to a Historical Site'"
+                                style="width:100%; min-height:80px; padding:8px; border-radius:6px; border:1px solid #e5e7eb; font-size:14px; background:white; resize:vertical;"
+                            >${overallTaskInstructions}</textarea>
+                        </div>`;
+                    }
                 }
                 
                 // 🎯 Add OQ Direction dropdown for OQ questions ONLY
@@ -3742,13 +3947,15 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                     ).length;
                     
                     // Show selected stage if available
-                    const selectedStage = this.selectedEnglishStage;
+                    const selectedGrade = this.selectedEnglishStage;
                     let stageInfo = '';
-                    if (selectedStage) {
-                        const templates = this.englishTemplatesByStage[selectedStage] || [];
+                    if (selectedGrade) {
+                        const stage = this.getStageFromGrade(selectedGrade);
+                        const templates = this.englishTemplatesByStage[stage] || [];
                         stageInfo = `
                             <div style="margin-top:15px; padding:10px; background:#dcfce7; border-radius:8px; border:1px solid #16a34a;">
-                                <strong>✅ المرحلة المختارة:</strong> ${selectedStage.replace(/_/g, ' ')}<br>
+                                <strong>✅ الصف المختار:</strong> Grade ${selectedGrade}<br>
+                                <strong>🎯 المرحلة:</strong> ${stage ? stage.replace(/_/g, ' ') : 'غير محدد'}<br>
                                 <strong>📋 عدد Templates المتاحة:</strong> ${templates.length}
                             </div>
                         `;
@@ -3827,18 +4034,19 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                 const stageSelect = document.getElementById('englishStageSelect');
                 const currentValue = stageSelect.value; // Save current selection
                 
-                stageSelect.innerHTML = '<option value="">-- اختر المرحلة --</option>';
+                stageSelect.innerHTML = '<option value="">-- اختر الصف --</option>';
                 
-                const stages = Object.keys(this.englishTemplatesByStage);
-                stages.sort().forEach(stage => {
+                // Use grade mapping
+                const grades = Object.keys(this.gradeMapping);
+                grades.sort((a, b) => parseInt(a) - parseInt(b)).forEach(grade => {
                     const option = document.createElement('option');
-                    option.value = stage;
-                    option.textContent = stage.replace(/_/g, ' ');
+                    option.value = grade;
+                    option.textContent = `Grade ${grade}`;
                     stageSelect.appendChild(option);
                 });
                 
                 // Restore selection if it was previously selected
-                if (currentValue && this.englishTemplatesByStage[currentValue]) {
+                if (currentValue && this.gradeMapping[currentValue]) {
                     stageSelect.value = currentValue;
                 }
             }
@@ -4911,6 +5119,14 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                         }
                     } else if (part.type === 'frq' || part.type === 'frq_ai') {
                         newContentBlock += `@ANSWER\n${part.answer}\n`;
+                        
+                        // Add task_target and overall_task_instructions if present
+                        if (part.metadata?.task_target) {
+                            newContentBlock += `\n@TASK_TARGET\n${part.metadata.task_target}\n`;
+                        }
+                        if (part.metadata?.overall_task_instructions) {
+                            newContentBlock += `\n@OVERALL_TASK_INSTRUCTIONS\n${part.metadata.overall_task_instructions}\n`;
+                        }
                     }
                     // Add other types here if needed
                 });
