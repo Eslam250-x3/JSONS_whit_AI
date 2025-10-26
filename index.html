@@ -633,10 +633,14 @@
             </div>
             <div style="margin-bottom:18px;">
                 <label for="sourceIdSelect" style="font-weight:bold;">Source ID (Name)</label>
-                <select id="sourceIdSelect" style="width:100%; padding:10px; border-radius:8px; border:1px solid #e5e7eb; margin-top:6px;">
-                    <option value="">none</option>
-                    <!-- Options will be populated dynamically by populateSourceIdDropdown() -->
-                </select>
+                <div id="sourceIdContainer" style="position: relative; width: 100%; margin-top: 6px;">
+                    <input type="text" id="sourceIdInput" placeholder="ابحث بالاسم أو ID..." 
+                           style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #e5e7eb; box-sizing: border-box;">
+                    <div id="sourceIdDropdown" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #e5e7eb; border-radius: 8px; max-height: 200px; overflow-y: auto; z-index: 1000; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                        <!-- Options will be populated dynamically -->
+                    </div>
+                </div>
+                <input type="hidden" id="sourceIdSelect" value="">
             </div>
             <div style="margin-bottom:24px;">
                 <label for="dialectSelect" style="font-weight:bold;">Dialect</label>
@@ -1117,6 +1121,7 @@
                 this.hotInstance = null;
                 this.aiTemplateHotInstance = null;
                 this.language = this.config.defaults.lang;
+                this.selectedIndex = -1; // For keyboard navigation in source ID dropdown
                 this.aiAbortController = null;
                 this.validationTimeout = null;
                 this.autoSaveTimeout = null;
@@ -1375,14 +1380,7 @@
                 document.getElementById('geminiApiKey').addEventListener('input', (e) => this.saveApiKeys('gemini', e.target.value));
                 document.getElementById('openaiApiKey').addEventListener('input', (e) => this.saveApiKeys('openai', e.target.value));
                 
-                // Source ID change event
-                document.getElementById('sourceIdSelect').addEventListener('change', (e) => {
-                    this.customization.sourceId = e.target.value;
-                    this.saveSettings();
-                    if (document.getElementById('jsonOutput').style.display === 'block') {
-                        this.convertToJSON();
-                    }
-                });
+                // Source ID change event is now handled in populateSourceIdDropdown()
                 
                 // Customize Modal Events
                 document.getElementById('customizeBtn').addEventListener('click', () => this.openCustomizeModal());
@@ -3808,37 +3806,160 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
             }
             
             populateSourceIdDropdown() {
-                const select = document.getElementById('sourceIdSelect');
-                if (!select) return;
+                const input = document.getElementById('sourceIdInput');
+                const dropdown = document.getElementById('sourceIdDropdown');
+                const hiddenSelect = document.getElementById('sourceIdSelect');
                 
-                // Clear existing content and event listeners
-                select.innerHTML = '';
-
-                // Add default "none" option
-                const defaultOption = document.createElement('option');
-                defaultOption.value = 'none';
-                defaultOption.textContent = "none";
-                select.appendChild(defaultOption);
-
-                // Add all options from the sourceIdData array
-                this.sourceIdData.forEach(item => {
-                        const option = document.createElement('option');
-                        option.value = item.source_id;
-                        option.textContent = item.name;
-                        select.appendChild(option);
+                if (!input || !dropdown || !hiddenSelect) return;
+                
+                // Store all source data for filtering
+                this.allSourceData = [
+                    { source_id: 'none', name: 'none' },
+                    ...this.sourceIdData
+                ];
+                
+                // Set initial value
+                const savedValue = this.customization.sourceId || 'none';
+                const savedItem = this.allSourceData.find(item => item.source_id.toString() === savedValue);
+                if (savedItem) {
+                    input.value = savedItem.name;
+                    hiddenSelect.value = savedItem.source_id;
+                }
+                
+                // Populate dropdown initially
+                this.filterSourceIdOptions('');
+                
+                // Add event listeners
+                input.addEventListener('input', (e) => {
+                    this.filterSourceIdOptions(e.target.value);
+                    dropdown.style.display = 'block';
+                    this.selectedIndex = -1; // Reset selection when typing
                 });
-
-                // Set the saved value if available, otherwise default to "none"
-                select.value = this.customization.sourceId || '';
                 
-                // Add event listener directly to the select element
-                select.addEventListener('change', (e) => {
-                    this.customization.sourceId = e.target.value;
-                    this.saveSettings();
-                    if (document.getElementById('jsonOutput').style.display === 'block') {
-                        this.convertToJSON();
+                input.addEventListener('focus', () => {
+                    dropdown.style.display = 'block';
+                });
+                
+                input.addEventListener('blur', (e) => {
+                    // Delay hiding to allow clicking on options
+                    setTimeout(() => {
+                        dropdown.style.display = 'none';
+                    }, 200);
+                });
+                
+                // Keyboard navigation
+                input.addEventListener('keydown', (e) => {
+                    const options = dropdown.querySelectorAll('.source-id-option');
+                    
+                    if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        this.selectedIndex = Math.min(this.selectedIndex + 1, options.length - 1);
+                        this.highlightOption(options);
+                    } else if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        this.selectedIndex = Math.max(this.selectedIndex - 1, -1);
+                        this.highlightOption(options);
+                    } else if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (this.selectedIndex >= 0 && options[this.selectedIndex]) {
+                            options[this.selectedIndex].click();
+                        }
+                    } else if (e.key === 'Escape') {
+                        dropdown.style.display = 'none';
+                        input.blur();
                     }
                 });
+                
+                // Close dropdown when clicking outside
+                document.addEventListener('click', (e) => {
+                    if (!e.target.closest('#sourceIdContainer')) {
+                        dropdown.style.display = 'none';
+                    }
+                });
+            }
+            
+            filterSourceIdOptions(searchTerm) {
+                const dropdown = document.getElementById('sourceIdDropdown');
+                if (!dropdown) return;
+                
+                // Clear existing options
+                dropdown.innerHTML = '';
+                
+                // Filter options based on search term (search by name or ID)
+                const filteredData = this.allSourceData.filter(item => 
+                    item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    item.source_id.toString().includes(searchTerm)
+                );
+                
+                // Create option elements
+                filteredData.forEach(item => {
+                    const option = document.createElement('div');
+                    option.className = 'source-id-option';
+                    option.style.cssText = 'padding: 10px; cursor: pointer; border-bottom: 1px solid #f3f4f6; transition: background-color 0.2s;';
+                    option.innerHTML = `
+                        <div style="font-weight: 500; color: #374151;">${item.name}</div>
+                        <div style="font-size: 12px; color: #6b7280;">ID: ${item.source_id}</div>
+                    `;
+                    
+                    // Add hover effect
+                    option.addEventListener('mouseenter', () => {
+                        option.style.backgroundColor = '#f3f4f6';
+                    });
+                    option.addEventListener('mouseleave', () => {
+                        option.style.backgroundColor = 'white';
+                    });
+                    
+                    // Handle selection
+                    option.addEventListener('click', () => {
+                        this.selectSourceId(item);
+                    });
+                    
+                    dropdown.appendChild(option);
+                });
+                
+                // Show "no results" if no matches
+                if (filteredData.length === 0) {
+                    const noResults = document.createElement('div');
+                    noResults.style.cssText = 'padding: 10px; color: #6b7280; text-align: center; font-style: italic;';
+                    noResults.textContent = 'لا توجد نتائج';
+                    dropdown.appendChild(noResults);
+                }
+            }
+            
+            selectSourceId(item) {
+                const input = document.getElementById('sourceIdInput');
+                const hiddenSelect = document.getElementById('sourceIdSelect');
+                const dropdown = document.getElementById('sourceIdDropdown');
+                
+                if (!input || !hiddenSelect || !dropdown) return;
+                
+                // Update input and hidden field
+                input.value = item.name;
+                hiddenSelect.value = item.source_id;
+                
+                // Hide dropdown
+                dropdown.style.display = 'none';
+                
+                // Update customization and save
+                this.customization.sourceId = item.source_id;
+                this.saveSettings();
+                
+                // Trigger conversion if needed
+                if (document.getElementById('jsonOutput').style.display === 'block') {
+                    this.convertToJSON();
+                }
+            }
+            
+            highlightOption(options) {
+                // Remove previous highlight
+                options.forEach(option => {
+                    option.style.backgroundColor = 'white';
+                });
+                
+                // Highlight selected option
+                if (this.selectedIndex >= 0 && options[this.selectedIndex]) {
+                    options[this.selectedIndex].style.backgroundColor = '#e5e7eb';
+                }
             }
             saveApiKeys(provider, value) {
                 this.apiKeys[provider] = value.trim();
