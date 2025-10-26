@@ -2126,7 +2126,16 @@ ${rawText}
             break;
         }
         case this.QuestionType.GAP_TEXT: {
-            part.answers = (content.GAPS || '').split('\n').map(v => v.trim()).filter(Boolean).map((val, i) => ({ value: val, order: i + 1 }));
+            const gapAnswers = (content.GAPS || '').split('\n').map(v => v.trim()).filter(Boolean);
+            part.answers = gapAnswers.map((val, i) => {
+                const isCorrect = val.startsWith('*');
+                const cleanValue = isCorrect ? val.substring(1).trim() : val;
+                return { 
+                    value: cleanValue, 
+                    order: i + 1,
+                    isCorrect: isCorrect
+                };
+            });
             break;
         }
         case this.QuestionType.STRING:
@@ -2263,7 +2272,15 @@ ${rawText}
             part.answer = remainingLines.join('\n').trim();
             break;
         case this.QuestionType.GAP_TEXT: {
-            part.answers = remainingLines.map((val, i) => ({ value: val, order: i + 1 }));
+            part.answers = remainingLines.map((val, i) => {
+                const isCorrect = val.startsWith('*');
+                const cleanValue = isCorrect ? val.substring(1).trim() : val;
+                return { 
+                    value: cleanValue, 
+                    order: i + 1,
+                    isCorrect: isCorrect
+                };
+            });
             break;
         }
         case this.QuestionType.INPUT_BOX: {
@@ -2625,6 +2642,17 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                                 this.showMessage(this.language === this.Language.ARABIC ? errorMsgAr : errorMsg, 'error');
                                 return;
                             }
+                            
+                            // 🆕 Check that number of @BLANK matches number of correct answers
+                            const blankCount = (p.stem.match(/@BLANK/g) || []).length;
+                            const correctAnswersCount = (p.answers || []).filter(ans => ans.isCorrect).length;
+                            
+                            if (blankCount !== correctAnswersCount) {
+                                const errorMsg = `Question ${i + 1}, Part ${j + 1} (GAP_TEXT): Number of @BLANK (${blankCount}) doesn't match number of correct answers (${correctAnswersCount}).`;
+                                const errorMsgAr = `السؤال ${i + 1}, الجزء ${j + 1} (ملء الفراغات): عدد @BLANK (${blankCount}) لا يطابق عدد الإجابات الصحيحة (${correctAnswersCount}).`;
+                                this.showMessage(this.language === this.Language.ARABIC ? errorMsgAr : errorMsg, 'error');
+                                return;
+                            }
                         }
                         
                         // Check INPUT_BOX has answer
@@ -2806,8 +2834,32 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
             _transformGapTextPart(part, lang) {
                 const stem_html_gap = '<span data-node-type="blank-line" data-node-variation="gap"> </span>';
                 const processedStem = (part.stem || '').replace(/@BLANK|_{3,}/g, stem_html_gap);
+                
+                // Separate correct answers (with *) from distractors (without *)
+                const correctAnswers = (part.answers || []).filter(ans => ans.isCorrect);
+                const distractors = (part.answers || []).filter(ans => !ans.isCorrect);
+                
+                // Shuffle all answers (correct + distractors) for Gap Text questions
+                const allAnswersToShuffle = (part.answers || []).map((ans, i) => ({
+                    value: ans.value,
+                    originalOrder: ans.order,
+                    isCorrect: ans.isCorrect,
+                    originalIndex: i
+                }));
+                
+                const shuffledAllAnswers = this._shuffleArray(allAnswersToShuffle);
+                
+                // Create gap_text_keys with all answers, correct_order only for correct ones
+                const gap_text_keys = shuffledAllAnswers.map((ans, i) => {
+                    const result = { value: ans.value };
+                    if (ans.isCorrect) {
+                        result.correct_order = ans.originalOrder;
+                    }
+                    return result;
+                });
+                
                 return {
-                    gap_text_keys: (part.answers || []).map(ans => ({ value: ans.value, correct_order: ans.order })),
+                    gap_text_keys: gap_text_keys,
                     stem: this.processTextForHtml(processedStem, lang, null, -1, 'stem', -1, 'gapText'),
                     choices: []
                 };
